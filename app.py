@@ -475,11 +475,11 @@ def transcript_rows(transcripts: list[dict], selected_id: str | None = None) -> 
                 "biotype": tx.get("biotype", ""),
                 "canonical": "Yes" if tx.get("is_canonical") else "No",
                 "selected": "Yes" if selected_id and tx.get("id") == selected_id else "No",
-                "exon_count": exon_count or "NA",
+                "exon_count": exon_count or None,
                 "transcript_length": int(tx.get("length") or 0),
-                "cds_length_estimate": protein_length * 3 if protein_length else "NA",
+                "cds_length_estimate": protein_length * 3 if protein_length else None,
                 "protein_id": translation.get("id", ""),
-                "protein_length": protein_length or "NA",
+                "protein_length": protein_length or None,
             }
         )
     return rows

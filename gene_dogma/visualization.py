@@ -69,6 +69,16 @@ def sequence_ribbon(sequence: str, molecule: str = "dna", limit: int = 180) -> s
     return f'<div class="sequence-ribbon">{"".join(spans)}</div>'
 
 
+def sequence_preview(sequence: str, limit: int = 72) -> str:
+    cleaned = _clean(sequence)
+    if not cleaned:
+        return "No sequence returned"
+    if len(cleaned) <= limit:
+        return cleaned
+    flank = max(12, limit // 2)
+    return f"{cleaned[:flank]} ... {cleaned[-flank:]}"
+
+
 def molecule_card(title: str, subtitle: str, sequence: str, molecule: str) -> str:
     length = len(_clean(sequence))
     return f"""
@@ -76,7 +86,8 @@ def molecule_card(title: str, subtitle: str, sequence: str, molecule: str) -> st
       <div class="molecule-title">{escape(title)}</div>
       <div class="molecule-subtitle">{escape(subtitle)}</div>
       <div class="molecule-length">{length:,} symbols</div>
-      {sequence_ribbon(sequence, molecule=molecule, limit=96)}
+      <div class="sequence-text">{escape(sequence_preview(sequence))}</div>
+      {sequence_ribbon(sequence, molecule=molecule, limit=144)}
     </div>
     """
 
@@ -88,6 +99,10 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
     locus = f"{gene.get('seq_region_name', '?')}:{gene.get('start', '?')}-{gene.get('end', '?')} ({strand})"
     transcript = data.get("selected_transcript") or {}
     protein = data.get("selected_translation") or {}
+    genomic_len = len(_clean(sequences.get("genomic_dna", "")))
+    cdna_len = len(_clean(sequences.get("transcript_cdna", "")))
+    cds_len = len(_clean(sequences.get("coding_dna", "")))
+    protein_len = len(_clean(sequences.get("protein", "")))
     return f"""
     <style>
       .dogma-wrap {{
@@ -135,14 +150,16 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 10px;
         align-items: stretch;
+        margin-top: 16px;
       }}
       .dogma-step {{
         border: 1px solid #d8dee9;
         border-radius: 8px;
         padding: 12px;
         background: #ffffff;
-        min-height: 92px;
+        min-height: 126px;
         min-width: 0;
+        position: relative;
       }}
       .dogma-step strong {{
         display: block;
@@ -155,9 +172,36 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         color: #4b5563;
         font-size: 13px;
       }}
+      .dogma-step-meta {{
+        display: inline-flex;
+        margin-top: 10px;
+        border-radius: 999px;
+        background: #f7fafc;
+        border: 1px solid #d8dee9;
+        color: #111827;
+        font-size: 12px;
+        font-weight: 800;
+        padding: 4px 8px;
+      }}
+      .dogma-step-preview {{
+        margin-top: 8px;
+        color: #374151;
+        font-size: 11px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        overflow-wrap: anywhere;
+      }}
+      .dogma-path-note {{
+        margin-top: 12px;
+        border-left: 4px solid #3a86ff;
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 10px 12px;
+        color: #374151;
+        font-size: 13px;
+      }}
       .molecule-grid {{
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
         margin-top: 16px;
       }}
@@ -171,23 +215,32 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         font-size: 12px;
         margin-top: 4px;
       }}
+      .sequence-text {{
+        margin-top: 9px;
+        color: #111827;
+        font-size: 11px;
+        line-height: 1.35;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }}
       .sequence-ribbon {{
         display: flex;
         flex-wrap: wrap;
         gap: 2px;
         margin-top: 10px;
-        max-height: 92px;
-        overflow: hidden;
+        max-height: none;
+        overflow: visible;
       }}
       .sequence-ribbon span {{
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 16px;
-        height: 18px;
+        width: 15px;
+        height: 17px;
         border-radius: 4px;
         color: #ffffff;
-        font-size: 10px;
+        font-size: 9px;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-weight: 700;
       }}
@@ -212,9 +265,9 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
           min-height: auto;
         }}
         .sequence-ribbon span {{
-          width: 15px;
-          height: 17px;
-          font-size: 9px;
+          width: 14px;
+          height: 16px;
+          font-size: 8px;
         }}
       }}
     </style>
@@ -234,11 +287,14 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         </div>
       </div>
       <div class="dogma-arrow-row">
-        <div class="dogma-step"><strong>1. DNA</strong><span>Genomic sequence at the gene locus.</span></div>
-        <div class="dogma-step"><strong>2. pre-mRNA</strong><span>Teaching proxy: DNA with U instead of T.</span></div>
-        <div class="dogma-step"><strong>3. mRNA</strong><span>Spliced transcript sequence.</span></div>
-        <div class="dogma-step"><strong>4. CDS</strong><span>Protein-coding part of the transcript.</span></div>
-        <div class="dogma-step"><strong>5. Protein</strong><span>Amino acid product when translated.</span></div>
+        <div class="dogma-step"><strong>1. DNA</strong><span>Genomic sequence at the gene locus.</span><div class="dogma-step-meta">{genomic_len:,} bp</div><div class="dogma-step-preview">{escape(sequence_preview(sequences.get("genomic_dna", ""), 44))}</div></div>
+        <div class="dogma-step"><strong>2. pre-mRNA</strong><span>Teaching proxy: DNA with U instead of T.</span><div class="dogma-step-meta">{genomic_len:,} nt</div><div class="dogma-step-preview">{escape(sequence_preview(sequences.get("pre_mrna_proxy", ""), 44))}</div></div>
+        <div class="dogma-step"><strong>3. mRNA</strong><span>Spliced transcript sequence.</span><div class="dogma-step-meta">{cdna_len:,} nt</div><div class="dogma-step-preview">{escape(sequence_preview(sequences.get("transcript_cdna", ""), 44))}</div></div>
+        <div class="dogma-step"><strong>4. CDS</strong><span>Protein-coding part read in codons.</span><div class="dogma-step-meta">{cds_len:,} bases</div><div class="dogma-step-preview">{escape(sequence_preview(sequences.get("coding_dna", ""), 44))}</div></div>
+        <div class="dogma-step"><strong>5. Protein</strong><span>Amino acid product when translated.</span><div class="dogma-step-meta">{protein_len:,} aa</div><div class="dogma-step-preview">{escape(sequence_preview(sequences.get("protein", ""), 44))}</div></div>
+      </div>
+      <div class="dogma-path-note">
+        DNA is copied into RNA, transcript processing selects a spliced message, the CDS is read three bases at a time, and the returned protein sequence shows the amino acid product for the selected transcript.
       </div>
       <div class="molecule-grid">
         {molecule_card("Genomic DNA", "locus sequence", sequences.get("genomic_dna", ""), "dna")}
