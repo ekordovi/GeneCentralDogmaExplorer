@@ -1,0 +1,34 @@
+import XCTest
+@testable import GeneCentralDogmaExplorer
+
+final class GeneCentralDogmaExplorerTests: XCTestCase {
+    func testBundledHBBDecodes() throws {
+        let response = try LocalExampleStore.loadHBBExample(bundle: Bundle(for: GeneDogmaViewModel.self))
+        XCTAssertEqual(response.gene.displayName, "HBB")
+        XCTAssertEqual(response.query.species, "homo_sapiens")
+        XCTAssertFalse(response.sequences.codingDna.isEmpty)
+        XCTAssertFalse(response.sequences.protein.isEmpty)
+    }
+
+    func testMutationResultDecodes() throws {
+        let json = """
+        {
+          "input": "5 A>T",
+          "mutation_type": "substitution",
+          "position": 5,
+          "codon_number": 2,
+          "original_base": "A",
+          "original_codon": "GAG",
+          "mutated_codon": "GTG",
+          "original_amino_acid": "E",
+          "mutated_amino_acid": "V",
+          "effect": "missense",
+          "mutated_dna": "ATGGTGTAA"
+        }
+        """.data(using: .utf8)!
+        let result = try JSONDecoder().decode(MutationResult.self, from: json)
+        XCTAssertEqual(result.effect, "missense")
+        XCTAssertEqual(result.originalCodon, "GAG")
+        XCTAssertEqual(result.mutatedCodon, "GTG")
+    }
+}
