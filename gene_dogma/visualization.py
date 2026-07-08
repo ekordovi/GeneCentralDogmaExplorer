@@ -152,6 +152,32 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         align-items: stretch;
         margin-top: 16px;
       }}
+      .dogma-flow-line {{
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 16px;
+        align-items: center;
+      }}
+      .dogma-flow-node {{
+        border-radius: 999px;
+        background: #111827;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 850;
+        text-align: center;
+        padding: 8px 10px;
+        position: relative;
+      }}
+      .dogma-flow-node:not(:last-child)::after {{
+        content: "->";
+        position: absolute;
+        right: -17px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #111827;
+        font-weight: 900;
+      }}
       .dogma-step {{
         border: 1px solid #d8dee9;
         border-radius: 8px;
@@ -249,8 +275,18 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         font-size: 13px;
       }}
       @media (max-width: 900px) {{
-        .gene-hero, .dogma-arrow-row, .molecule-grid {{
+        .gene-hero, .dogma-arrow-row, .dogma-flow-line, .molecule-grid {{
           grid-template-columns: 1fr;
+        }}
+        .dogma-flow-node:not(:last-child)::after {{
+          content: "↓";
+          right: 50%;
+          top: calc(100% + 2px);
+          transform: translateX(50%);
+          color: #111827;
+        }}
+        .dogma-flow-node {{
+          margin-bottom: 8px;
         }}
         .dogma-wrap {{
           padding: 12px;
@@ -285,6 +321,13 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
           <div class="molecule-title" style="margin-top:14px">Protein product</div>
           <div class="gene-locus">{escape(str(protein.get("id", "No protein translation")))}</div>
         </div>
+      </div>
+      <div class="dogma-flow-line">
+        <div class="dogma-flow-node">DNA</div>
+        <div class="dogma-flow-node">pre-mRNA</div>
+        <div class="dogma-flow-node">spliced mRNA</div>
+        <div class="dogma-flow-node">CDS codons</div>
+        <div class="dogma-flow-node">protein</div>
       </div>
       <div class="dogma-arrow-row">
         <div class="dogma-step"><strong>1. DNA</strong><span>Genomic sequence at the gene locus.</span><div class="dogma-step-meta">{genomic_len:,} bp</div><div class="dogma-step-preview">{escape(sequence_preview(sequences.get("genomic_dna", ""), 44))}</div></div>

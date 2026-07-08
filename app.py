@@ -91,6 +91,10 @@ st.markdown(
         border-radius: 8px;
         padding: 0.75rem;
       }
+      [data-testid="stMetric"],
+      [data-testid="stMetric"] * {
+        color: #111827 !important;
+      }
       [data-testid="stMetricValue"] {
         white-space: normal;
         overflow-wrap: anywhere;
@@ -241,6 +245,52 @@ st.markdown(
         border-radius: 8px;
         margin: 0.85rem 0;
       }
+      .sequence-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin: 0.75rem 0;
+      }
+      .sequence-summary-card {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 0.75rem;
+        min-width: 0;
+      }
+      .sequence-summary-label {
+        color: #4b5563;
+        font-size: 0.78rem;
+        margin-bottom: 0.25rem;
+      }
+      .sequence-summary-value {
+        color: #111827;
+        font-size: 1.15rem;
+        font-weight: 850;
+        overflow-wrap: anywhere;
+      }
+      .readable-sequence {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #111827;
+        padding: 0.9rem;
+        margin: 0.7rem 0 0.9rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.86rem;
+        line-height: 1.55;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .stage-note {
+        border-left: 4px solid #1f9d8a;
+        background: #ffffff;
+        border-radius: 8px;
+        color: #374151;
+        padding: 0.75rem 0.9rem;
+        margin: 0.7rem 0;
+      }
       .stTabs [data-baseweb="tab-list"] {
         gap: 0.25rem;
       }
@@ -278,7 +328,8 @@ st.markdown(
           font-size: 1.85rem;
         }
         .story-grid,
-        .sequence-strip {
+        .sequence-strip,
+        .sequence-summary-grid {
           grid-template-columns: 1fr;
         }
         .beginner-card {
@@ -462,6 +513,38 @@ def escape_html(value: str) -> str:
     )
 
 
+def wrap_for_display(sequence: str, line_width: int = 72, max_symbols: int = 720) -> str:
+    cleaned = "".join(char for char in str(sequence or "").upper() if char.isalpha() or char == "*")
+    if not cleaned:
+        return "No sequence returned."
+    shown = cleaned[:max_symbols]
+    lines = [shown[index : index + line_width] for index in range(0, len(shown), line_width)]
+    if len(cleaned) > max_symbols:
+        lines.append(f"... {len(cleaned) - max_symbols:,} more symbols")
+    return "\n".join(lines)
+
+
+def sequence_summary_cards(summary: dict) -> str:
+    values = [
+        ("Length", f"{summary['length']:,}"),
+        ("GC %", "NA" if summary["gc_percent"] is None else str(summary["gc_percent"])),
+        ("Starts", summary["starts_with"][:12] or "NA"),
+        ("Ends", summary["ends_with"][-12:] or "NA"),
+    ]
+    html = ['<div class="sequence-summary-grid">']
+    for label, value in values:
+        html.append(
+            (
+                '<div class="sequence-summary-card">'
+                f'<div class="sequence-summary-label">{escape_html(label)}</div>'
+                f'<div class="sequence-summary-value">{escape_html(value)}</div>'
+                "</div>"
+            )
+        )
+    html.append("</div>")
+    return "".join(html)
+
+
 def transcript_rows(transcripts: list[dict], selected_id: str | None = None) -> list[dict]:
     rows = []
     for tx in transcripts:
@@ -487,14 +570,18 @@ def transcript_rows(transcripts: list[dict], selected_id: str | None = None) -> 
 
 def sequence_panel(label: str, sequence: str, alphabet: str, fasta_header: str, key_prefix: str) -> None:
     summary = summarize_sequence(sequence, alphabet)
-    cols = st.columns(4)
-    cols[0].metric("Length", summary["length"])
-    if summary["gc_percent"] is not None:
-        cols[1].metric("GC %", summary["gc_percent"])
-    cols[2].metric("Starts", summary["starts_with"][:12] or "NA")
-    cols[3].metric("Ends", summary["ends_with"][-12:] or "NA")
-
-    st.code(short_sequence(sequence), language="text")
+    st.markdown(sequence_summary_cards(summary), unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="readable-sequence">{escape_html(wrap_for_display(sequence))}</div>',
+        unsafe_allow_html=True,
+    )
+    with st.expander(f"Show more {label} text"):
+        st.text_area(
+            f"{label} sequence",
+            value=wrap_for_display(sequence, line_width=80, max_symbols=4000),
+            height=260,
+            key=f"{key_prefix}-sequence-text",
+        )
     st.download_button(
         f"Download {label} FASTA",
         data=wrap_fasta(fasta_header, sequence),
@@ -570,7 +657,7 @@ def central_dogma_map(data: dict) -> None:
     labels = [stage[0] for stage in stages]
     selected_stage = st.segmented_control("Central dogma stage", labels, default=labels[0])
     stage = stages[labels.index(selected_stage or labels[0])]
-    st.write(stage[1])
+    st.markdown(f'<div class="stage-note">{escape_html(stage[1])}</div>', unsafe_allow_html=True)
     if stage[0] == "Exons / Introns":
         exons = selected.get("Exon") or selected.get("exons") or []
         if exons:
