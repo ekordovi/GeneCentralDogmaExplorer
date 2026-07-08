@@ -24,8 +24,17 @@ struct GeneDogmaAPIClient {
     var decoder = JSONDecoder()
     var encoder = JSONEncoder()
 
-    init(baseURL: URL = URL(string: "http://127.0.0.1:8000")!) {
+    init(baseURL: URL = GeneDogmaAPIClient.configuredBaseURL()) {
         self.baseURL = baseURL
+    }
+
+    static func configuredBaseURL(bundle: Bundle = .main) -> URL {
+        if let value = bundle.object(forInfoDictionaryKey: "GeneDogmaAPIBaseURL") as? String,
+           let url = URL(string: value),
+           !value.isEmpty {
+            return url
+        }
+        return URL(string: "http://127.0.0.1:8000")!
     }
 
     func fetchGene(symbol: String, species: String, transcriptID: String? = nil) async throws -> GeneDogmaResponse {
@@ -49,7 +58,6 @@ struct GeneDogmaAPIClient {
         request.httpBody = try encoder.encode(MutationRequest(codingDna: codingDNA, change: change))
         return try await self.request(request)
     }
-    
 
     private func request<T: Decodable>(url: URL) async throws -> T {
         try await request(URLRequest(url: url))

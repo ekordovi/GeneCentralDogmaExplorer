@@ -48,6 +48,12 @@ streamlit run app.py
 uvicorn api:app --reload
 ```
 
+For production, restrict browser access to your deployed web domains:
+
+```bash
+GENE_DOGMA_ALLOWED_ORIGINS=https://your-app.example,https://your-site.example uvicorn api:app
+```
+
 Important endpoints:
 
 - `GET /api/health`
@@ -86,9 +92,12 @@ Before App Store upload:
 
 - Install full Xcode and set it active with `xcode-select`.
 - Replace the placeholder AppIcon with real artwork.
-- Deploy the API over HTTPS and update `GeneDogmaAPIClient` with that URL.
+- Deploy the API over HTTPS and update `GeneDogmaAPIBaseURL` in `Info.plist`
+  with that URL.
 - Remove the local-networking App Transport Security exception if the production
   build no longer needs local HTTP access.
+- Host `docs/support.md` and `docs/privacy_policy.md` as simple public support
+  and privacy pages.
 - See `docs/app_store_readiness.md`.
 
 ## Test
@@ -123,3 +132,10 @@ Live lookups use Ensembl REST endpoints:
 
 This project is for education and portfolio demonstration. It is not medical
 advice, diagnosis, or treatment guidance.
+
+## Mutation Simulator Scope
+
+Mutation mode is a simple coding-DNA teaching tool. It supports small examples
+such as `20 A>T`, `20del`, and `20insA`; it does not parse HGVS notation, map
+genomic coordinates to transcript coordinates, evaluate splice effects, inspect
+exon boundaries, query ClinVar, or classify clinical variants.

@@ -123,20 +123,11 @@ struct GeneExploreScreen: View {
                             TranscriptRow(transcript: transcript)
                         }
                     }
-                    Section("Protein features") {
-                        FeatureRow(title: "Domains", value: "Ready for UniProt feature annotations")
-                        FeatureRow(title: "Signal peptide", value: "Ready for UniProt feature annotations")
-                        FeatureRow(title: "Transmembrane regions", value: response.sequences.protein.isEmpty ? "No protein sequence returned" : "Hydrophobic-stretch heuristic now; curated API next")
-                        FeatureRow(title: "Active sites / binding / PTMs", value: "Planned UniProt layer")
-                    }
-                    Section("Disease + variants") {
+                    Section("Teaching context") {
                         Text(diseaseNote(response))
                     }
-                    Section("Expression atlas") {
+                    Section("Expression context") {
                         Text(expressionNote(response))
-                    }
-                    Section("Evolution mode") {
-                        Text("Compare this protein with mouse, zebrafish, or another species to find conserved regions. The backend already supports species lookup; native pairwise comparison is next.")
                     }
                     Section("Structure mode") {
                         if let proteinID = response.selectedTranslation?.id, !proteinID.isEmpty {
@@ -183,7 +174,7 @@ struct MutationScreen: View {
                 } header: {
                     Text("Coding DNA change")
                 } footer: {
-                    Text("Supported examples: 20 A>T, 20del, 20insA. Positions are one-based within the coding DNA sequence.")
+                    Text("Supported examples: 20 A>T, 20del, 20insA. This is a simple coding-DNA practice tool, not HGVS parsing, splice prediction, ClinVar interpretation, or medical variant classification.")
                 }
 
                 if let result = viewModel.mutationResult {
@@ -280,6 +271,9 @@ struct AboutScreen: View {
                 Section("App Store category") {
                     LabeledContent("Category", value: "Education")
                     LabeledContent("Bundle ID", value: "com.evankordovi.GeneCentralDogmaExplorer")
+                }
+                Section("Roadmap") {
+                    Text("Future versions may add curated protein features, ClinVar-style variant lookup, expression atlas data, and cross-species comparison. Version 1 focuses on gene lookup, central-dogma sequence views, simple coding-DNA mutation practice, saved genes, and study questions.")
                 }
             }
             .navigationTitle("About")
@@ -480,13 +474,13 @@ func knownFunction(_ response: GeneDogmaResponse) -> String {
 
 func diseaseNote(_ response: GeneDogmaResponse) -> String {
     switch response.gene.displayName.uppercased() {
-    case "HBB": return "Teaching examples include HbS, HbC, and beta-thalassemia variants. Live ClinVar lookup is planned."
-    case "BRCA1": return "Some pathogenic variants are associated with hereditary breast and ovarian cancer risk. Live ClinVar lookup is planned."
-    case "TP53": return "Somatic variants are common across cancers; inherited variants can cause Li-Fraumeni syndrome. Live ClinVar lookup is planned."
-    case "CFTR": return "Pathogenic variants can cause cystic fibrosis and related CFTR disorders. Live ClinVar lookup is planned."
-    case "INS": return "Some variants are linked to monogenic diabetes and insulin-processing disorders. Live ClinVar lookup is planned."
-    case "APOE": return "Common APOE alleles are associated with Alzheimer disease and cardiovascular-risk differences. Live ClinVar lookup is planned."
-    default: return "ClinVar-style variant lookup is planned. Use Mutation mode now for local codon and amino-acid consequences."
+    case "HBB": return "Teaching examples include HbS, HbC, and beta-thalassemia variants. Use Mutation mode for simple codon-level practice."
+    case "BRCA1": return "Some pathogenic variants are associated with hereditary breast and ovarian cancer risk. This app does not classify variants or provide medical guidance."
+    case "TP53": return "Somatic variants are common across cancers; inherited variants can cause Li-Fraumeni syndrome. This app keeps the focus on educational sequence flow."
+    case "CFTR": return "Pathogenic variants can cause cystic fibrosis and related CFTR disorders. Mutation mode is only a simplified coding-DNA exercise."
+    case "INS": return "Some variants are linked to monogenic diabetes and insulin-processing disorders. This app does not interpret patient variants."
+    case "APOE": return "Common APOE alleles are associated with Alzheimer disease and cardiovascular-risk differences. This app is educational, not diagnostic."
+    default: return "Use Mutation mode for simple codon and amino-acid consequences. This app does not perform clinical variant interpretation."
     }
 }
 
@@ -498,7 +492,7 @@ func expressionNote(_ response: GeneDogmaResponse) -> String {
     case "CFTR": return "Important in airway, pancreatic, intestinal, sweat gland, and reproductive epithelial tissues."
     case "INS": return "Highly specialized expression in pancreatic beta cells."
     case "APOE": return "Relevant in liver, brain glia, macrophages, and lipid-handling tissues."
-    default: return "Expression Atlas integration is planned for tissue and cell-type expression."
+    default: return "No tissue-expression summary is bundled for this gene yet."
     }
 }
 
@@ -553,7 +547,7 @@ func storyReport(response: GeneDogmaResponse) -> String {
     Known biology:
     \(knownFunction(response))
 
-    Disease relevance:
+    Teaching context:
     \(diseaseNote(response))
 
     Selected transcript: \(response.selectedTranscript?.id ?? "not available")

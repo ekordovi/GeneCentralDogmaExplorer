@@ -57,11 +57,11 @@ class EnsemblClient:
         return self.get_text(f"/sequence/id/{stable_id}", params={"type": sequence_type})
 
 
-def _transcript_rank(transcript: dict[str, Any]) -> tuple[int, int, str]:
+def _transcript_rank(transcript: dict[str, Any]) -> tuple[int, int, int]:
     is_canonical = 0 if transcript.get("is_canonical") else 1
     has_translation = 0 if transcript.get("Translation") else 1
     length = -(int(transcript.get("length") or 0))
-    return (is_canonical, has_translation, str(length))
+    return (is_canonical, has_translation, length)
 
 
 def choose_transcript(gene: dict[str, Any], preferred_transcript_id: str | None = None) -> dict[str, Any] | None:

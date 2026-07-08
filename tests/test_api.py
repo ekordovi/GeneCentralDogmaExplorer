@@ -3,7 +3,7 @@ import pytest
 fastapi = pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
 
-from api import create_app
+from api import create_app, parse_allowed_origins
 from gene_dogma import EnsemblError
 
 
@@ -110,3 +110,15 @@ def test_mutation_validation_error():
     response = client.post("/api/mutation", json={"coding_dna": "ATGGAGTAA", "change": "5 C>T"})
     assert response.status_code == 400
     assert "Reference base mismatch" in response.json()["detail"]
+
+
+def test_parse_allowed_origins_defaults_to_dev_wildcard():
+    assert parse_allowed_origins(None) == ["*"]
+    assert parse_allowed_origins("  ") == ["*"]
+
+
+def test_parse_allowed_origins_accepts_comma_separated_domains():
+    assert parse_allowed_origins("https://gene.example, https://app.example") == [
+        "https://gene.example",
+        "https://app.example",
+    ]

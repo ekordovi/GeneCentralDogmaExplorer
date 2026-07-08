@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -69,7 +70,17 @@ def default_gene_fetcher(symbol: str, species: str, transcript_id: str | None) -
     )
 
 
-def create_app(gene_fetcher: GeneFetcher = default_gene_fetcher) -> FastAPI:
+def parse_allowed_origins(raw_origins: str | None) -> list[str]:
+    if not raw_origins:
+        return ["*"]
+    origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+    return origins or ["*"]
+
+
+def create_app(
+    gene_fetcher: GeneFetcher = default_gene_fetcher,
+    allowed_origins: list[str] | None = None,
+) -> FastAPI:
     app = FastAPI(
         title="Gene Central Dogma Explorer API",
         version="1.0.0",
@@ -77,7 +88,7 @@ def create_app(gene_fetcher: GeneFetcher = default_gene_fetcher) -> FastAPI:
     )
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=allowed_origins or parse_allowed_origins(os.getenv("GENE_DOGMA_ALLOWED_ORIGINS")),
         allow_credentials=False,
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["*"],

@@ -55,6 +55,15 @@ class EnsemblClientTests(unittest.TestCase):
         gene = FakeClient().lookup_symbol("fake_species", "FAKE")
         self.assertEqual(choose_transcript(gene)["id"], "TX_CANON")
 
+    def test_choose_transcript_prefers_longest_when_other_ranks_match(self):
+        gene = {
+            "Transcript": [
+                {"id": "TX_SHORT", "is_canonical": 0, "length": 900, "Translation": {"id": "P1"}},
+                {"id": "TX_LONG", "is_canonical": 0, "length": 1000, "Translation": {"id": "P2"}},
+            ]
+        }
+        self.assertEqual(choose_transcript(gene)["id"], "TX_LONG")
+
     def test_choose_transcript_honors_preferred_id(self):
         gene = FakeClient().lookup_symbol("fake_species", "FAKE")
         self.assertEqual(choose_transcript(gene, "TX_NONCANON")["id"], "TX_NONCANON")

@@ -19,12 +19,15 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ## Backend
 
 - Deploy the FastAPI backend over HTTPS.
+- Set `GENE_DOGMA_ALLOWED_ORIGINS` to the deployed web/support domains instead
+  of leaving CORS open for every origin.
 - Confirm these endpoints work:
   - `GET /api/health`
   - `GET /api/example`
   - `GET /api/gene?symbol=HBB&species=homo_sapiens`
   - `POST /api/mutation`
-- Update `GeneDogmaAPIClient` in the iOS app with the deployed HTTPS base URL.
+- Update `GeneDogmaAPIBaseURL` in the iOS app `Info.plist` with the deployed
+  HTTPS base URL.
 
 ## Native App Requirements
 
@@ -32,6 +35,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 - Confirm the app is not a plain WebView.
 - Confirm the educational disclaimer appears in the About tab.
 - Confirm the privacy text matches `docs/privacy_policy.md`.
+- Host `docs/support.md` and `docs/privacy_policy.md` on a public support site.
 - Replace the placeholder AppIcon asset with a real 1024 x 1024 icon before
   App Store upload.
 
