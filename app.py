@@ -146,6 +146,108 @@ st.markdown(
         font-weight: 750;
         overflow-wrap: anywhere;
       }
+      .web-hero {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 1.1rem;
+        margin: 0.75rem 0 1rem;
+      }
+      .web-hero-kicker {
+        color: #3a86ff;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.35rem;
+      }
+      .web-hero-title {
+        color: #111827;
+        font-size: 2.35rem;
+        font-weight: 850;
+        line-height: 1.02;
+        overflow-wrap: anywhere;
+      }
+      .web-hero-copy {
+        color: #374151;
+        font-size: 1rem;
+        line-height: 1.45;
+        margin-top: 0.65rem;
+      }
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.8rem;
+      }
+      .pill {
+        border: 1px solid #d8dee9;
+        border-radius: 999px;
+        color: #111827;
+        background: #f9fafb;
+        padding: 0.3rem 0.65rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+      .story-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin: 0.85rem 0;
+      }
+      .story-card {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 0.85rem;
+        min-width: 0;
+      }
+      .story-card-title {
+        color: #111827;
+        font-weight: 800;
+        margin-bottom: 0.35rem;
+      }
+      .story-card-body {
+        color: #4b5563;
+        font-size: 0.92rem;
+        line-height: 1.4;
+      }
+      .sequence-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.6rem;
+        margin: 0.85rem 0;
+      }
+      .sequence-chip {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 0.75rem;
+      }
+      .sequence-chip-label {
+        color: #4b5563;
+        font-size: 0.78rem;
+        margin-bottom: 0.25rem;
+      }
+      .sequence-chip-value {
+        color: #111827;
+        font-weight: 800;
+      }
+      .disclaimer-band {
+        border-left: 4px solid #3a86ff;
+        background: #f7fafc;
+        color: #374151;
+        padding: 0.8rem 0.9rem;
+        border-radius: 8px;
+        margin: 0.85rem 0;
+      }
+      .stTabs [data-baseweb="tab-list"] {
+        gap: 0.25rem;
+      }
+      .stTabs [data-baseweb="tab"] {
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+      }
       @media (max-width: 760px) {
         .block-container {
           padding-left: 0.75rem;
@@ -168,6 +270,16 @@ st.markdown(
         .quick-facts {
           grid-template-columns: 1fr 1fr;
           gap: 0.5rem;
+        }
+        .web-hero {
+          padding: 0.9rem;
+        }
+        .web-hero-title {
+          font-size: 1.85rem;
+        }
+        .story-grid,
+        .sequence-strip {
+          grid-template-columns: 1fr;
         }
         .beginner-card {
           padding: 0.85rem;
@@ -708,6 +820,126 @@ def study_questions(data: dict) -> list[dict]:
     return questions
 
 
+def render_web_hero(data: dict) -> None:
+    gene = data["gene"]
+    sequences = data["sequences"]
+    chips = [
+        gene.get("biotype") or "gene",
+        gene_locus(gene),
+        f"{len(sequences.get('coding_dna', '')):,} coding bases",
+        f"{len(sequences.get('protein', '')):,} amino acids",
+    ]
+    chip_html = "".join(f'<span class="pill">{escape_html(chip)}</span>' for chip in chips if chip)
+    st.markdown(
+        f"""
+        <div class="web-hero">
+          <div class="web-hero-kicker">Central dogma explorer</div>
+          <div class="web-hero-title">{escape_html(gene.get("display_name", "Gene"))}</div>
+          <div class="web-hero-copy">{escape_html(why_gene_matters(gene))}</div>
+          <div class="pill-row">{chip_html}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_story_cards(data: dict) -> None:
+    gene = data["gene"]
+    sequences = data["sequences"]
+    cards = [
+        ("DNA", f"{gene.get('display_name', 'This gene')} sits at {gene_locus(gene)}."),
+        ("RNA", f"The selected transcript is {(data.get('selected_transcript') or {}).get('display_name') or (data.get('selected_transcript') or {}).get('id') or 'not available'}."),
+        ("Protein", f"The returned protein sequence has {len(sequences.get('protein', '')):,} amino acids."),
+    ]
+    html = ['<div class="story-grid">']
+    for title, body in cards:
+        html.append(
+            (
+                '<div class="story-card">'
+                f'<div class="story-card-title">{escape_html(title)}</div>'
+                f'<div class="story-card-body">{escape_html(body)}</div>'
+                "</div>"
+            )
+        )
+    html.append("</div>")
+    st.markdown("".join(html), unsafe_allow_html=True)
+
+
+def render_sequence_strip(sequences: dict) -> None:
+    items = [
+        ("Genomic DNA", f"{len(sequences.get('genomic_dna', '')):,} bp"),
+        ("Transcript", f"{len(sequences.get('transcript_cdna', '')):,} bases"),
+        ("Coding DNA", f"{len(sequences.get('coding_dna', '')):,} bases"),
+        ("Protein", f"{len(sequences.get('protein', '')):,} aa"),
+    ]
+    html = ['<div class="sequence-strip">']
+    for label, value in items:
+        html.append(
+            (
+                '<div class="sequence-chip">'
+                f'<div class="sequence-chip-label">{escape_html(label)}</div>'
+                f'<div class="sequence-chip-value">{escape_html(value)}</div>'
+                "</div>"
+            )
+        )
+    html.append("</div>")
+    st.markdown("".join(html), unsafe_allow_html=True)
+
+
+def render_saved_genes_section() -> None:
+    saved_df = saved_genes_table()
+    if saved_df.empty:
+        st.info("No saved genes yet. Save a gene from Overview to build a study list for this session.")
+        return
+    st.dataframe(saved_df, width="stretch", hide_index=True)
+    st.download_button(
+        "Download Saved Gene List",
+        data=saved_df.to_json(orient="records", indent=2),
+        file_name="saved_gene_study_list.json",
+        mime="application/json",
+    )
+
+
+def render_isoform_section(transcripts: list[dict], selected: dict, symbol: str, species: str, gene: dict) -> None:
+    tx_df = pd.DataFrame(transcript_rows(transcripts, selected.get("id")))
+    if tx_df.empty:
+        st.warning("No transcript records returned.")
+        return
+    selected_rows = tx_df[tx_df["selected"] == "Yes"]
+    if not selected_rows.empty:
+        st.dataframe(selected_rows, width="stretch", hide_index=True)
+    with st.expander("All transcript isoforms"):
+        st.dataframe(tx_df, width="stretch", hide_index=True)
+        protein_tx = tx_df[tx_df["protein_id"].astype(str) != ""]
+        if not protein_tx.empty:
+            tx_options = protein_tx["transcript_id"].tolist()
+            selected_tx_id = st.selectbox(
+                "Reload a protein-coding transcript",
+                tx_options,
+                index=tx_options.index(selected.get("id")) if selected.get("id") in tx_options else 0,
+            )
+            if st.button("Reload Selected Transcript"):
+                try:
+                    st.session_state["dogma_data"] = cached_lookup(symbol or gene["display_name"], species, selected_tx_id)
+                    st.rerun()
+                except Exception as exc:
+                    st.error(f"Transcript reload failed: {exc}")
+
+
+def render_study_section(data: dict) -> None:
+    questions = study_questions(data)
+    question_labels = [item["question"] for item in questions]
+    chosen_question = st.selectbox("Question", question_labels)
+    question = questions[question_labels.index(chosen_question)]
+    answer = st.radio("Choose an answer", question["choices"], key=f"quiz-{data['gene'].get('display_name')}-{chosen_question}")
+    if st.button("Check Answer"):
+        if answer == question["answer"]:
+            st.success("Correct.")
+        else:
+            st.error(f"Not quite. Correct answer: {question['answer']}")
+        st.write(question["explanation"])
+
+
 st.title("Gene Central Dogma Explorer")
 st.caption("Start with a gene, then follow its DNA -> RNA -> protein story in plain English.")
 
@@ -776,296 +1008,113 @@ if data:
     transcripts = data.get("transcripts") or []
 
     if st.session_state.get("loaded_example_default"):
-        st.info("Showing the bundled HBB demo so the app opens with a real gene story. Search or load a famous example to switch genes.")
+        st.info("Showing the bundled HBB demo. Search or load a famous example to switch genes.")
 
-    st.subheader(f"{gene['display_name']} central dogma")
-    render_beginner_intro(data)
+    render_web_hero(data)
     render_quick_facts(gene)
     st.markdown(dogma_visual_html(data), unsafe_allow_html=True)
+    render_sequence_strip(sequences)
 
-    st.subheader("Gene Identity Card")
-    identity_cols = st.columns([1, 1])
-    with identity_cols[0]:
+    action_cols = st.columns([1, 1, 2])
+    with action_cols[0]:
+        if st.button("Save Gene"):
+            save_gene_record(data)
+            st.success(f"Saved {gene.get('display_name', 'this gene')}.")
+    with action_cols[1]:
+        st.download_button(
+            "Download Report",
+            data=markdown_report(data),
+            file_name=f"{gene.get('display_name', 'gene')}_central_dogma_report.md",
+            mime="text/markdown",
+        )
+    with action_cols[2]:
+        st.markdown(
+            '<div class="disclaimer-band">Educational use only. This is not medical advice, diagnosis, treatment guidance, or clinical variant interpretation.</div>',
+            unsafe_allow_html=True,
+        )
+
+    overview_tab, dogma_tab, mutation_tab, study_tab, advanced_tab = st.tabs(
+        ["Overview", "Dogma", "Mutation", "Study", "Advanced"]
+    )
+
+    with overview_tab:
+        st.subheader("Gene story")
+        render_story_cards(data)
+        st.write(known_function(gene))
+        st.write(why_gene_matters(gene))
+        with st.expander("Plain-English notes"):
+            for point in beginner_summary(data):
+                st.write(f"- {point}")
+            st.dataframe(beginner_glossary(), width="stretch", hide_index=True)
+
+        st.subheader("Gene identity")
         st.write(f"**Gene name:** {gene.get('display_name', 'NA')}")
         st.write(f"**Aliases:** {known_aliases(gene)}")
         st.write(f"**Species:** {data.get('query', {}).get('species', 'NA')}")
         st.write(f"**Chromosome location:** {gene_locus(gene)}")
         st.write(f"**Strand:** {strand_label(gene.get('strand'))}")
         st.write(f"**Gene type:** {gene.get('biotype') or 'NA'}")
-    with identity_cols[1]:
-        st.write("**Known function**")
-        st.write(known_function(gene))
-        st.write("**Why this gene matters**")
-        st.write(why_gene_matters(gene))
-    if st.button("Save This Gene"):
-        save_gene_record(data)
-        st.success(f"Saved {gene.get('display_name', 'this gene')} for this session.")
 
-    view = st.selectbox(
-        "Explore view",
-        [
-            "Start Here",
-            "Explain Like I'm New",
-            "Saved Genes",
-            "Isoforms",
-            "Dogma Map",
-            "Mutation",
-            "Protein Features",
-            "Disease Variants",
-            "Expression",
-            "Evolution",
-            "Structure",
-            "Study Quiz",
-            "Story Mode",
-            "Sequences",
-            "Raw JSON",
-        ],
-        index=0,
-    )
-
-    if view == "Start Here":
-        st.subheader("Start Here")
-        st.write("The central dogma is the path from DNA instructions to RNA messages to protein products.")
-        st.dataframe(beginner_glossary(), width="stretch", hide_index=True)
-        st.subheader("Selected molecule path")
+    with dogma_tab:
+        st.subheader("Central dogma map")
         central_dogma_map(data)
 
-    elif view == "Explain Like I'm New":
-        st.subheader("Explain This Gene Like I'm New")
-        st.write(why_gene_matters(gene))
-        st.write(
-            "Think of the gene as a recipe stored in DNA. The cell copies useful parts into RNA, trims that message, "
-            "then reads the coding part in three-letter codons to make a protein when the transcript is protein-coding."
-        )
-        for point in beginner_summary(data):
-            st.write(f"- {point}")
-        st.dataframe(beginner_glossary(), width="stretch", hide_index=True)
-
-    elif view == "Saved Genes":
-        st.subheader("Saved Genes")
-        saved_df = saved_genes_table()
-        if saved_df.empty:
-            st.info("No saved genes yet. Click **Save This Gene** on any result to build a study list.")
-        else:
-            st.dataframe(saved_df, width="stretch", hide_index=True)
-            st.download_button(
-                "Download Saved Gene List",
-                data=saved_df.to_json(orient="records", indent=2),
-                file_name="saved_gene_study_list.json",
-                mime="application/json",
-            )
-            reload_symbol = st.selectbox("Reload saved gene", saved_df["symbol"].tolist())
-            if st.button("Reload Saved Gene"):
-                saved_record = saved_df[saved_df["symbol"] == reload_symbol].iloc[0].to_dict()
-                try:
-                    if reload_symbol == "HBB":
-                        st.session_state["dogma_data"] = load_example()
-                    else:
-                        st.session_state["dogma_data"] = cached_lookup(reload_symbol, saved_record.get("species", "homo_sapiens"))
-                    st.session_state["loaded_example_default"] = False
-                    st.rerun()
-                except Exception as exc:
-                    st.error(f"Saved gene lookup failed: {exc}")
-
-    elif view == "Isoforms":
-        st.subheader("Isoform Explorer")
-        st.write("Isoforms are different transcript versions made from the same gene.")
-        tx_df = pd.DataFrame(transcript_rows(transcripts, selected.get("id")))
-        if tx_df.empty:
-            st.warning("No transcript records returned.")
-        else:
-            st.dataframe(tx_df, width="stretch", hide_index=True)
-            protein_tx = tx_df[tx_df["protein_id"].astype(str) != ""]
-            if not protein_tx.empty:
-                tx_options = protein_tx["transcript_id"].tolist()
-                selected_tx_id = st.selectbox(
-                    "Protein-coding transcript",
-                    tx_options,
-                    index=tx_options.index(selected.get("id")) if selected.get("id") in tx_options else 0,
-                )
-                if st.button("Reload Selected Transcript"):
-                    try:
-                        st.session_state["dogma_data"] = cached_lookup(symbol or gene["display_name"], species, selected_tx_id)
-                        st.rerun()
-                    except Exception as exc:
-                        st.error(f"Transcript reload failed: {exc}")
-
-            if len(tx_df) > 1:
-                compare_ids = st.multiselect("Compare transcripts", tx_df["transcript_id"].tolist(), default=tx_df["transcript_id"].tolist()[:2])
-                st.dataframe(tx_df[tx_df["transcript_id"].isin(compare_ids)], width="stretch", hide_index=True)
-
+        st.subheader("Selected transcript")
         selected_cols = st.columns(2)
-        selected_cols[0].write(f"Selected transcript: `{selected.get('id', 'NA')}`")
-        selected_cols[1].write(f"Protein/translation: `{translation.get('id', 'No protein translation returned')}`")
+        selected_cols[0].write(f"`{selected.get('id', 'NA')}`")
+        selected_cols[1].write(f"`{translation.get('id', 'No protein translation returned')}`")
+        render_isoform_section(transcripts, selected, symbol, species, gene)
 
-    elif view == "Dogma Map":
-        st.subheader("Central Dogma Map")
-        central_dogma_map(data)
-
-    elif view == "Mutation":
-        st.subheader("Mutation Simulator")
+    with mutation_tab:
+        st.subheader("Mutation simulator")
         st.write("Type a simple coding-DNA edit and see how the codon and amino acid change.")
         if sequences.get("coding_dna"):
             mutation_simulator(sequences)
         else:
             st.warning("No coding DNA returned, so local codon mutation simulation is unavailable.")
+        st.caption("This is a simple coding-DNA teaching tool. It does not parse HGVS, map genomic coordinates, or classify clinical variants.")
 
-    elif view == "Protein Features":
-        st.subheader("Protein Feature View")
-        if sequences.get("protein"):
-            feature_df = protein_features(sequences, translation)
-            st.dataframe(feature_df, width="stretch", hide_index=True)
-            st.dataframe(
-                pd.DataFrame(
-                    [
-                        {"annotation_type": "Domains", "status": "Ready for UniProt feature API"},
-                        {"annotation_type": "Signal peptide", "status": "Ready for UniProt feature API"},
-                        {"annotation_type": "Transmembrane regions", "status": "Hydrophobic stretch heuristic shown above; curated API next"},
-                        {"annotation_type": "Active sites", "status": "Ready for UniProt feature API"},
-                        {"annotation_type": "Binding regions", "status": "Ready for UniProt feature API"},
-                        {"annotation_type": "Post-translational modifications", "status": "Ready for UniProt feature API"},
-                    ]
-                ),
-                width="stretch",
-                hide_index=True,
-            )
-            sequence_panel("protein", sequences["protein"], "protein", f"{gene['display_name']}|protein", "protein-features")
-            st.caption("Domain, active-site, PTM, signal-peptide, and transmembrane annotations need a UniProt feature lookup layer.")
-        else:
-            st.warning("No protein sequence returned. This can happen for non-coding genes or non-translated transcripts.")
+    with study_tab:
+        st.subheader("Study mode")
+        render_study_section(data)
+        st.subheader("Saved genes")
+        render_saved_genes_section()
 
-    elif view == "Disease Variants":
-        st.subheader("Disease + Variant Layer")
-        variant_df = hbb_variant_examples(gene)
-        if variant_df.empty:
-            st.info("ClinVar-style lookup is not connected yet for this gene. The mutation simulator still shows local codon consequences.")
-        else:
-            st.dataframe(variant_df, width="stretch", hide_index=True)
-            st.caption("These are curated HBB teaching examples, not a live ClinVar response.")
-
-    elif view == "Expression":
-        st.subheader("Expression Atlas")
-        st.write(expression_hint(gene))
-        st.dataframe(
-            pd.DataFrame(
-                [
-                    {"source": "Local app", "tissue_or_cell_type": "Needs expression API", "relative_expression": "Pending"},
-                    {"source": "Teaching note", "tissue_or_cell_type": "Gene-specific context", "relative_expression": expression_hint(gene)},
-                ]
-            ),
-            width="stretch",
-            hide_index=True,
-        )
-
-    elif view == "Evolution":
-        st.subheader("Evolution Mode")
-        compare_cols = st.columns(2)
-        compare_species_label = compare_cols[0].selectbox("Comparison species", list(SPECIES), index=1)
-        compare_symbol = compare_cols[1].text_input("Comparison gene symbol", value=gene.get("display_name", ""))
-        if st.button("Compare Conservation"):
-            try:
-                comparison = cached_lookup(compare_symbol, SPECIES[compare_species_label])
-                score = conservation_score(sequences.get("protein", ""), comparison["sequences"].get("protein", ""))
-                if score is None:
-                    st.warning("Protein conservation could not be calculated from the returned sequences.")
-                else:
-                    st.metric("Protein identity over aligned prefix", f"{score}%")
-                    st.write(
-                        f"Compared {len(sequences.get('protein', '')):,} residues from {gene.get('display_name')} "
-                        f"with {len(comparison['sequences'].get('protein', '')):,} residues from {compare_symbol}."
-                    )
-            except Exception as exc:
-                st.error(f"Comparison lookup failed: {exc}")
-
-    elif view == "Structure":
-        st.subheader("Structure Mode")
-        protein_id = translation.get("id", "")
-        if protein_id:
-            st.link_button("Open AlphaFold entry", f"https://alphafold.ebi.ac.uk/entry/{protein_id}")
-            st.link_button("Search PDB", f"https://www.rcsb.org/search?request=%7B%22query%22:%7B%22type%22:%22terminal%22,%22service%22:%22full_text%22,%22parameters%22:%7B%22value%22:%22{protein_id}%22%7D%7D,%22return_type%22:%22entry%22%7D")
-            st.write(f"Protein ID: `{protein_id}`")
-        else:
-            st.warning("No protein ID returned for structure lookup.")
-        st.caption("Mutation-to-structure highlighting can be added once residue coordinates or an embedded viewer are connected.")
-
-    elif view == "Study Quiz":
-        st.subheader("Quiz / Study Mode")
-        questions = study_questions(data)
-        question_labels = [item["question"] for item in questions]
-        chosen_question = st.selectbox("Question", question_labels)
-        question = questions[question_labels.index(chosen_question)]
-        answer = st.radio("Choose an answer", question["choices"], key=f"quiz-{gene.get('display_name')}-{chosen_question}")
-        if st.button("Check Answer"):
-            if answer == question["answer"]:
-                st.success("Correct.")
-            else:
-                st.error(f"Not quite. Correct answer: {question['answer']}")
-            st.write(question["explanation"])
-        st.caption("Study mode refreshes around the gene currently loaded, so saved genes and famous examples become repeatable practice.")
-
-    elif view == "Story Mode":
-        st.subheader("Story Mode")
         report = markdown_report(data)
-        st.markdown(report)
-        st.download_button(
-            "Download Markdown Report",
-            data=report,
-            file_name=f"{gene.get('display_name', 'gene')}_central_dogma_report.md",
-            mime="text/markdown",
-        )
-        pdf_bytes = pdf_report_bytes(report, f"{gene.get('display_name', 'Gene')} central dogma report")
-        if pdf_bytes:
-            st.download_button(
-                "Download PDF Report",
-                data=pdf_bytes,
-                file_name=f"{gene.get('display_name', 'gene')}_central_dogma_report.pdf",
-                mime="application/pdf",
-            )
-        else:
-            st.info("PDF export is ready but needs the optional `reportlab` package installed. Markdown export works now.")
+        with st.expander("Story report"):
+            st.markdown(report)
+            pdf_bytes = pdf_report_bytes(report, f"{gene.get('display_name', 'Gene')} central dogma report")
+            if pdf_bytes:
+                st.download_button(
+                    "Download PDF Report",
+                    data=pdf_bytes,
+                    file_name=f"{gene.get('display_name', 'gene')}_central_dogma_report.pdf",
+                    mime="application/pdf",
+                )
 
-    elif view == "Sequences":
-        sequence_view = st.selectbox("Sequence type", ["DNA", "RNA", "Protein", "Compare"], index=0)
+    with advanced_tab:
+        st.subheader("Sequences")
+        sequence_view = st.segmented_control("Sequence type", ["DNA", "RNA", "Protein", "Compare"], default="DNA")
         if sequence_view == "DNA":
-            st.subheader("Genomic DNA")
             sequence_panel("genomic DNA", sequences["genomic_dna"], "dna", f"{gene['display_name']}|genomic_dna", "sequences-genomic-dna")
-            st.subheader("Coding DNA")
             if sequences["coding_dna"]:
                 sequence_panel("coding DNA", sequences["coding_dna"], "dna", f"{gene['display_name']}|coding_dna", "sequences-coding-dna")
-            else:
-                st.warning("No coding DNA returned. This may be a non-coding gene or transcript.")
         elif sequence_view == "RNA":
-            st.subheader("pre-mRNA proxy")
-            st.write("This is the genomic DNA sequence with T changed to U, shown as a teaching proxy before splicing.")
+            st.write("The pre-mRNA view is a teaching proxy: genomic DNA with T changed to U.")
             sequence_panel("pre-mRNA proxy", sequences["pre_mrna_proxy"], "rna", f"{gene['display_name']}|pre_mrna_proxy", "sequences-pre-mrna")
-            st.subheader("Transcript cDNA / mature RNA proxy")
             if sequences["transcript_cdna"]:
-                sequence_panel(
-                    "transcript cDNA",
-                    to_mrna(sequences["transcript_cdna"]),
-                    "rna",
-                    f"{gene['display_name']}|transcript_mrna",
-                    "sequences-transcript-mrna",
-                )
-            else:
-                st.warning("No transcript cDNA returned.")
-            st.subheader("Coding mRNA")
+                sequence_panel("transcript mRNA", to_mrna(sequences["transcript_cdna"]), "rna", f"{gene['display_name']}|transcript_mrna", "sequences-transcript-mrna")
             if sequences["coding_mrna"]:
                 sequence_panel("coding mRNA", sequences["coding_mrna"], "rna", f"{gene['display_name']}|coding_mrna", "sequences-coding-mrna")
-            else:
-                st.warning("No coding mRNA returned.")
         elif sequence_view == "Protein":
-            st.subheader("Protein")
             if sequences["protein"]:
                 sequence_panel("protein", sequences["protein"], "protein", f"{gene['display_name']}|protein", "sequences-protein")
-            else:
-                st.warning("No protein sequence returned. This can happen for non-coding genes or non-translated transcripts.")
-
-            if sequences["coding_dna"]:
-                translated = translate_dna(sequences["coding_dna"]).rstrip("*")
-                if translated and sequences["protein"]:
+                translated = translate_dna(sequences["coding_dna"]).rstrip("*") if sequences["coding_dna"] else ""
+                if translated:
                     match = "matches" if translated == sequences["protein"] else "differs from"
                     st.write(f"Local codon-table translation of coding DNA {match} the returned Ensembl protein.")
+            else:
+                st.warning("No protein sequence returned. This can happen for non-coding genes or non-translated transcripts.")
         else:
             compare = pd.DataFrame(
                 [
@@ -1077,5 +1126,19 @@ if data:
             )
             st.dataframe(compare.drop(columns=["composition"]), width="stretch", hide_index=True)
 
-    else:
-        st.json(data)
+        st.subheader("Protein and structure")
+        if sequences.get("protein"):
+            st.dataframe(protein_features(sequences, translation), width="stretch", hide_index=True)
+        protein_id = translation.get("id", "")
+        if protein_id:
+            link_cols = st.columns(2)
+            link_cols[0].link_button("Open AlphaFold entry", f"https://alphafold.ebi.ac.uk/entry/{protein_id}")
+            link_cols[1].link_button("Search PDB", f"https://www.rcsb.org/search?request=%7B%22query%22:%7B%22type%22:%22terminal%22,%22service%22:%22full_text%22,%22parameters%22:%7B%22value%22:%22{protein_id}%22%7D%7D,%22return_type%22:%22entry%22%7D")
+
+        st.subheader("Teaching context")
+        variant_df = hbb_variant_examples(gene)
+        if not variant_df.empty:
+            st.dataframe(variant_df, width="stretch", hide_index=True)
+        st.write(expression_hint(gene))
+        with st.expander("Raw JSON response"):
+            st.json(data)
