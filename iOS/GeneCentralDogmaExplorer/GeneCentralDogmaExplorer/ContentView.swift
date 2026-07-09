@@ -2,72 +2,155 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = GeneDogmaViewModel()
+    @State private var selectedTab = 0
 
     var body: some View {
-        TabView {
-            SearchScreen(viewModel: viewModel)
+        TabView(selection: $selectedTab) {
+            SearchScreen(viewModel: viewModel, selectedTab: $selectedTab)
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
+                .tag(0)
 
             GeneExploreScreen(viewModel: viewModel)
                 .tabItem { Label("Explore", systemImage: "point.3.connected.trianglepath.dotted") }
+                .tag(1)
 
             MutationScreen(viewModel: viewModel)
                 .tabItem { Label("Mutation", systemImage: "wand.and.stars") }
+                .tag(2)
 
             StudyQuizScreen(viewModel: viewModel)
                 .tabItem { Label("Quiz", systemImage: "questionmark.circle") }
+                .tag(3)
 
             SavedGenesScreen(viewModel: viewModel)
                 .tabItem { Label("Saved", systemImage: "bookmark") }
+                .tag(4)
 
             AboutScreen()
                 .tabItem { Label("About", systemImage: "info.circle") }
+                .tag(5)
         }
     }
 }
 
 struct SearchScreen: View {
     @ObservedObject var viewModel: GeneDogmaViewModel
+    @Binding var selectedTab: Int
+    @State private var showSearchFields = false
 
     var body: some View {
         NavigationStack {
             Form {
+                if let response = viewModel.response {
+                    Section {
+                        GeneSummaryCard(response: response)
+                        BeginnerTakeaway(response: response)
+                        CompactDogmaPath()
+                    } header: {
+                        Text(response.gene.displayName.uppercased() == "HBB" ? "Start with HBB" : "Current gene story")
+                    } footer: {
+                        Text(
+                            response.gene.displayName.uppercased() == "HBB"
+                                ? "The bundled HBB example works offline and shows how a DNA change can alter beta-globin."
+                                : "Use Explore to follow this gene from DNA to RNA to protein."
+                        )
+                    }
+                }
+
                 Section {
-                    TextField("Gene symbol", text: $viewModel.symbol)
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
-                    TextField("Species", text: $viewModel.species)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
                     Button {
-                        Task { await viewModel.lookupGene() }
+                        viewModel.loadBundledExample()
+                        selectedTab = 1
                     } label: {
-                        Label("Look Up Gene", systemImage: "magnifyingglass")
+                        Label("Explore HBB", systemImage: "doc.text.magnifyingglass")
+                    }
+
+                    Button {
+                        Task {
+                            await viewModel.loadFamousExample(
+                                FamousGeneExample(
+                                    symbol: "BRCA1",
+                                    name: "DNA repair",
+                                    why: "Genome repair gene tied to cancer-risk biology."
+                                )
+                            )
+                            selectedTab = 1
+                        }
+                    } label: {
+                        Label("Try BRCA1", systemImage: "wrench.and.screwdriver")
                     }
                     .disabled(viewModel.isLoading)
 
                     Button {
-                        viewModel.loadBundledExample()
+                        Task {
+                            await viewModel.loadFamousExample(
+                                FamousGeneExample(
+                                    symbol: "TP53",
+                                    name: "Tumor suppressor",
+                                    why: "Stress-response gene often called the guardian of the genome."
+                                )
+                            )
+                            selectedTab = 1
+                        }
                     } label: {
-                        Label("Load HBB Demo", systemImage: "doc.text")
+                        Label("Try TP53", systemImage: "shield")
+                    }
+                    .disabled(viewModel.isLoading)
+
+                    Button {
+                        showSearchFields = true
+                    } label: {
+                        Label("Search any gene", systemImage: "magnifyingglass")
+                    }
+
+                    Button {
+                        selectedTab = 2
+                    } label: {
+                        Label("Simulate a mutation", systemImage: "wand.and.stars")
                     }
                 } header: {
-                    Text("Lookup")
+                    Text("Choose a path")
                 } footer: {
-                    Text("Try HBB, BRCA1, TP53, CFTR, INS, or APOE. Live lookups use the Gene Central Dogma API and Ensembl.")
+                    Text("You can understand the app from these examples before typing a symbol.")
                 }
 
-                Section("Famous examples") {
-                    ForEach(famousGeneExamples) { example in
+                if showSearchFields {
+                    Section {
+                        TextField("Gene symbol", text: $viewModel.symbol)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                        TextField("Species", text: $viewModel.species)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
                         Button {
-                            Task { await viewModel.loadFamousExample(example) }
+                            Task { await viewModel.lookupGene() }
                         } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("\(example.symbol) - \(example.name)")
-                                    .font(.headline)
-                                Text(example.why)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                            Label("Look Up Gene", systemImage: "magnifyingglass")
+                        }
+                        .disabled(viewModel.isLoading)
+                    } header: {
+                        Text("Search any gene")
+                    } footer: {
+                        Text("Try HBB, BRCA1, TP53, CFTR, INS, or APOE. Live lookups use the Gene Central Dogma API and Ensembl.")
+                    }
+                }
+
+                Section("More examples") {
+                    DisclosureGroup("Famous genes") {
+                        ForEach(famousGeneExamples) { example in
+                            Button {
+                                Task {
+                                    await viewModel.loadFamousExample(example)
+                                    selectedTab = 1
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("\(example.symbol) - \(example.name)")
+                                        .font(.headline)
+                                    Text(example.why)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
@@ -81,9 +164,8 @@ struct SearchScreen: View {
                     ErrorNotice(message: error)
                 }
 
-                if let response = viewModel.response {
-                    Section("Current gene") {
-                        GeneSummaryCard(response: response)
+                if viewModel.response != nil {
+                    Section("Session") {
                         Button {
                             viewModel.saveCurrentGene()
                         } label: {
@@ -94,6 +176,38 @@ struct SearchScreen: View {
             }
             .navigationTitle("Gene Explorer")
         }
+    }
+}
+
+struct CompactDogmaPath: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            DogmaPill(label: "DNA", color: .blue)
+            Image(systemName: "arrow.right")
+                .foregroundStyle(.secondary)
+            DogmaPill(label: "RNA", color: .teal)
+            Image(systemName: "arrow.right")
+                .foregroundStyle(.secondary)
+            DogmaPill(label: "Protein", color: .pink)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("DNA to RNA to protein")
+        .padding(.vertical, 4)
+    }
+}
+
+struct DogmaPill: View {
+    var label: String
+    var color: Color
+
+    var body: some View {
+        Text(label)
+            .font(.caption.weight(.bold))
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(color.gradient)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
 
