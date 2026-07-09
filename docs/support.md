@@ -26,12 +26,16 @@ classify patient variants.
 See `docs/privacy_policy.md` or the static `docs/privacy.html` page for the
 privacy policy.
 
+Hosted privacy policy:
+
+https://ekordovi.github.io/GeneCentralDogmaExplorer/privacy.html
+
 ## Contact
 
 For support or privacy questions, use the public GitHub issue tracker:
 
 https://github.com/ekordovi/GeneCentralDogmaExplorer/issues
 
-Before App Store submission, host `docs/support.html` at the support URL listed
-in App Store Connect. The hosted page should keep the same educational
-disclaimer, data-source note, mutation-scope limits, and privacy link.
+App Store support URL:
+
+https://ekordovi.github.io/GeneCentralDogmaExplorer/support.html

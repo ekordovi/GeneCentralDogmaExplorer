@@ -43,7 +43,9 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 - Confirm the educational disclaimer appears in the About tab.
 - Confirm the privacy text matches `docs/privacy_policy.md`.
 - Host the static `docs/support.html` and `docs/privacy.html` pages on a public
-  support site, such as GitHub Pages from the `/docs` folder.
+  support site, such as GitHub Pages from the `/docs` folder. Current URLs:
+  - Support: `https://ekordovi.github.io/GeneCentralDogmaExplorer/support.html`
+  - Privacy: `https://ekordovi.github.io/GeneCentralDogmaExplorer/privacy.html`
 - Confirm the AppIcon asset renders correctly in Xcode and on the simulator.
 - If crash/error logging is added, keep it privacy-compliant: no gene-search
   payloads, no health data, no names, no contact data, and no analytics profile.

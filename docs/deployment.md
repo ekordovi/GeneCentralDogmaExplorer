@@ -73,6 +73,13 @@ The `docs/` folder contains static pages that can be served by GitHub Pages:
 In GitHub, enable Pages with source `main` and folder `/docs`. Use the resulting
 support URL in App Store Connect.
 
+This repository is currently configured for:
+
+```text
+Support URL: https://ekordovi.github.io/GeneCentralDogmaExplorer/support.html
+Privacy URL: https://ekordovi.github.io/GeneCentralDogmaExplorer/privacy.html
+```
+
 ## Verification Command
 
 Run the offline v1 verifier before demos:

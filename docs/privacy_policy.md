@@ -33,4 +33,6 @@ terms may be processed by the backend and Ensembl to return gene information.
 For support or privacy questions, use the public support page, static
 `docs/support.html` page, or GitHub issue tracker:
 
+https://ekordovi.github.io/GeneCentralDogmaExplorer/support.html
+
 https://github.com/ekordovi/GeneCentralDogmaExplorer/issues

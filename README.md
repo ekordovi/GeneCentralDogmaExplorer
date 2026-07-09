@@ -100,7 +100,8 @@ Before App Store upload:
 - Remove the local-networking App Transport Security exception if the production
   build no longer needs local HTTP access.
 - Host `docs/support.md` and `docs/privacy_policy.md` as simple public support
-  and privacy pages.
+  and privacy pages. GitHub Pages is configured at
+  `https://ekordovi.github.io/GeneCentralDogmaExplorer/`.
 - Follow `docs/deployment.md` for backend hosting, iOS production URL setup,
   and the optional GitHub Actions uptime check.
 - See `docs/app_store_readiness.md`.
