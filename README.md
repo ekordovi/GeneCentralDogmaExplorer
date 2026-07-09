@@ -89,14 +89,15 @@ uvicorn api:app --reload
 
 Then run the `GeneCentralDogmaExplorer` scheme in Xcode on an iPhone simulator.
 The bundled HBB demo works offline. Live lookup and mutation calls use
+the Debug `GENE_DOGMA_API_BASE_URL` build setting, currently
 `http://127.0.0.1:8000`, which maps from the iOS simulator back to your Mac.
 
 Before App Store upload:
 
 - Install full Xcode and set it active with `xcode-select`.
 - Confirm the included AppIcon renders correctly in Xcode and on the simulator.
-- Deploy the API over HTTPS and update `GeneDogmaAPIBaseURL` in `Info.plist`
-  with that URL.
+- Deploy the API over HTTPS and update the Release
+  `GENE_DOGMA_API_BASE_URL` build setting in the Xcode project with that URL.
 - Remove the local-networking App Transport Security exception if the production
   build no longer needs local HTTP access.
 - Host `docs/support.md` and `docs/privacy_policy.md` as simple public support
@@ -119,6 +120,7 @@ To verify the core v1 learning loop without network access:
 ```bash
 python scripts/verify_v1.py
 python scripts/verify_app_store_metadata.py
+python scripts/verify_ios_config.py
 ```
 
 To verify a deployed API after hosting:

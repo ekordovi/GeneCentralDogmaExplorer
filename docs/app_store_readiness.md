@@ -29,8 +29,9 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   - `GET /api/example`
   - `GET /api/gene?symbol=HBB&species=homo_sapiens`
   - `POST /api/mutation`
-- Update `GeneDogmaAPIBaseURL` in the iOS app `Info.plist` with the deployed
-  HTTPS base URL.
+- Update the Release `GENE_DOGMA_API_BASE_URL` iOS build setting with the
+  deployed HTTPS base URL. `Info.plist` reads `GeneDogmaAPIBaseURL` from that
+  build setting.
 - Add a simple uptime check for `/api/health` before TestFlight. A daily GitHub
   Actions curl or provider health check is enough for v1. This repo includes
   `.github/workflows/api-health.yml`; set `GENE_DOGMA_API_HEALTH_URL` after the
@@ -63,6 +64,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   - Mutation simulator shows silent/missense/nonsense/frameshift labels.
   - Text wraps cleanly on small iPhones.
 - Run `python scripts/verify_v1.py` before every demo.
+- Run `python scripts/verify_ios_config.py` before TestFlight upload.
 
 ## Screenshot Plan
 

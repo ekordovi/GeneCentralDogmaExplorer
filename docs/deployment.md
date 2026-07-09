@@ -35,12 +35,14 @@ restricting it keeps the production setup tidy.
 
 ## iOS API URL
 
-For local simulator work, `GeneDogmaAPIBaseURL` in the iOS `Info.plist` points to
-`http://127.0.0.1:8000`.
+For local simulator work, the Debug `GENE_DOGMA_API_BASE_URL` build setting
+points to `http://127.0.0.1:8000`. `GeneDogmaAPIBaseURL` in `Info.plist` reads
+from that build setting.
 
 Before TestFlight or App Store upload:
 
-1. Replace `GeneDogmaAPIBaseURL` with the deployed HTTPS backend base URL.
+1. Replace the Release `GENE_DOGMA_API_BASE_URL` build setting with the
+   deployed HTTPS backend base URL.
 2. Run the app on an iPhone simulator.
 3. Verify HBB, BRCA1, and TP53 live lookup.
 4. If the production build no longer needs local HTTP testing, remove the
@@ -86,6 +88,7 @@ Run the offline v1 verifier before demos:
 
 ```bash
 python scripts/verify_v1.py
+python scripts/verify_ios_config.py
 ```
 
 After deployment, verify the hosted API:

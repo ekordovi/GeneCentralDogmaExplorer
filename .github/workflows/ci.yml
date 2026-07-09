@@ -21,3 +21,5 @@ jobs:
         run: python scripts/verify_v1.py
       - name: Verify App Store metadata
         run: python scripts/verify_app_store_metadata.py
+      - name: Verify iOS API config
+        run: python scripts/verify_ios_config.py
