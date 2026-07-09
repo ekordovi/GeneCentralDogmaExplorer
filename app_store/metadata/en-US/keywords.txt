@@ -1,0 +1,1 @@
+gene,DNA,RNA,protein,biology,genetics,education,mutation,central dogma,student

@@ -19,3 +19,5 @@ jobs:
         run: PYTHONPATH=. pytest -q
       - name: Verify offline v1 loop
         run: python scripts/verify_v1.py
+      - name: Verify App Store metadata
+        run: python scripts/verify_app_store_metadata.py

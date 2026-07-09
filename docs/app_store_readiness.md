@@ -79,6 +79,8 @@ API URL is configured:
 
 - Subtitle: Learn genes from DNA to RNA to protein.
 - Keywords: gene, DNA, RNA, protein, biology, genetics, education, mutation
+- Full metadata package: `docs/app_store_metadata.md` and
+  `app_store/metadata/en-US/`.
 - Description:
 
 Gene Central Dogma Explorer helps students and curious learners understand how a

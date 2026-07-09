@@ -1,0 +1,8 @@
+Gene Central Dogma Explorer is an educational biology app. It has no accounts, payments, ads, analytics, or medical claims.
+
+The bundled HBB example works offline. Live gene lookup uses the app backend, which queries Ensembl REST for gene, transcript, sequence, and protein information.
+
+Mutation mode is a simple coding-DNA teaching simulator and does not parse HGVS, map genomic coordinates, query ClinVar, classify patient variants, or provide medical guidance.
+
+Support URL: https://ekordovi.github.io/GeneCentralDogmaExplorer/support.html
+Privacy URL: https://ekordovi.github.io/GeneCentralDogmaExplorer/privacy.html
