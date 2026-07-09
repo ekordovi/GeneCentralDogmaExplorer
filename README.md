@@ -101,6 +101,8 @@ Before App Store upload:
   build no longer needs local HTTP access.
 - Host `docs/support.md` and `docs/privacy_policy.md` as simple public support
   and privacy pages.
+- Follow `docs/deployment.md` for backend hosting, iOS production URL setup,
+  and the optional GitHub Actions uptime check.
 - See `docs/app_store_readiness.md`.
 
 ## Test

@@ -1,0 +1,21 @@
+name: API Health
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 15 * * *"
+
+jobs:
+  api-health:
+    runs-on: ubuntu-latest
+    env:
+      HEALTH_URL: ${{ vars.GENE_DOGMA_API_HEALTH_URL }}
+    steps:
+      - name: Check configured API health endpoint
+        run: |
+          if [ -z "$HEALTH_URL" ]; then
+            echo "::notice title=API health check skipped::Set the GENE_DOGMA_API_HEALTH_URL repository variable to your deployed /api/health URL."
+            exit 0
+          fi
+
+          curl --fail --silent --show-error --max-time 20 "$HEALTH_URL"

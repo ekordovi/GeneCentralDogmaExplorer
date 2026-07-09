@@ -110,7 +110,11 @@ final class GeneDogmaViewModel: ObservableObject {
     @Published var species = "homo_sapiens"
     @Published var response: GeneDogmaResponse?
     @Published var mutationText = "20 A>T"
+    @Published var comparisonMutationA = "20 A>T"
+    @Published var comparisonMutationB = "19 G>T"
     @Published var mutationResult: MutationResult?
+    @Published var comparisonResultA: MutationResult?
+    @Published var comparisonResultB: MutationResult?
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var savedGenes: [String] = []
@@ -130,9 +134,10 @@ final class GeneDogmaViewModel: ObservableObject {
         do {
             response = try LocalExampleStore.loadHBBExample()
             symbol = response?.gene.displayName ?? "HBB"
+            applyMutationExamples()
             errorMessage = nil
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = friendlyErrorMessage(error)
         }
     }
 
@@ -149,8 +154,11 @@ final class GeneDogmaViewModel: ObservableObject {
         do {
             response = try await client.fetchGene(symbol: trimmedSymbol, species: trimmedSpecies)
             mutationResult = nil
+            comparisonResultA = nil
+            comparisonResultB = nil
+            applyMutationExamples()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = friendlyErrorMessage(error)
         }
     }
 
@@ -165,7 +173,25 @@ final class GeneDogmaViewModel: ObservableObject {
         do {
             mutationResult = try await client.simulateMutation(codingDNA: codingDNA, change: mutationText)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = friendlyErrorMessage(error, context: "mutation")
+        }
+    }
+
+    func compareMutations() async {
+        guard let codingDNA = response?.sequences.codingDna, !codingDNA.isEmpty else {
+            errorMessage = "This gene does not have coding DNA available for mutation comparison."
+            return
+        }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            async let first = client.simulateMutation(codingDNA: codingDNA, change: comparisonMutationA)
+            async let second = client.simulateMutation(codingDNA: codingDNA, change: comparisonMutationB)
+            comparisonResultA = try await first
+            comparisonResultB = try await second
+        } catch {
+            errorMessage = friendlyErrorMessage(error, context: "mutation")
         }
     }
 
@@ -190,4 +216,109 @@ final class GeneDogmaViewModel: ObservableObject {
             await lookupGene()
         }
     }
+
+    private func applyMutationExamples() {
+        guard let codingDNA = response?.sequences.codingDna, !codingDNA.isEmpty else { return }
+        let substitution = exampleSubstitutionChange(codingDNA)
+        let nonsense = exampleNonsenseChange(codingDNA)
+        let deletion = exampleDeletionChange(codingDNA)
+        mutationText = substitution
+        comparisonMutationA = substitution
+        comparisonMutationB = nonsense.isEmpty ? deletion : nonsense
+    }
+}
+
+func friendlyErrorMessage(_ error: Error, context: String = "lookup") -> String {
+    let message = error.localizedDescription
+    if context == "mutation" {
+        if message.contains("Reference base mismatch") {
+            return "That edit does not match the selected coding DNA. Try one of the suggested examples for this gene."
+        }
+        if message.contains("Position must be") {
+            return message
+        }
+        return "Try a simple coding-DNA edit like 20 A>T, 20del, or 20insA."
+    }
+    if message.localizedCaseInsensitiveContains("not found") || message.localizedCaseInsensitiveContains("lookup") {
+        return "We could not find that gene symbol for this species. Try checking the spelling or selecting another species."
+    }
+    if message.localizedCaseInsensitiveContains("offline") || message.localizedCaseInsensitiveContains("network") {
+        return "Live lookup is not reachable right now. The bundled HBB demo still works offline."
+    }
+    return "We could not load that gene right now. Try HBB, BRCA1, TP53, or the offline HBB demo."
+}
+
+func mutationEffectExplanation(_ effect: String) -> String {
+    switch effect.lowercased() {
+    case "silent":
+        return "The DNA changed, but the codon still points to the same amino acid."
+    case "missense":
+        return "One amino acid changed. This can matter if that spot is important for the protein."
+    case "nonsense":
+        return "The edit creates a stop signal, so translation may stop early."
+    case "frameshift":
+        return "The reading frame shifts, so many downstream codons can change."
+    default:
+        return "The coding sequence changed."
+    }
+}
+
+func exampleSubstitutionChange(_ codingDNA: String, preferredPosition: Int = 20) -> String {
+    let cleaned = cleanDNA(codingDNA)
+    guard !cleaned.isEmpty else { return "" }
+    let position = min(max(1, preferredPosition), cleaned.count)
+    let reference = characterAt(cleaned, oneBasedPosition: position)
+    return "\(position) \(reference)>\(alternateBase(reference))"
+}
+
+func exampleDeletionChange(_ codingDNA: String, preferredPosition: Int = 20) -> String {
+    let cleaned = cleanDNA(codingDNA)
+    guard !cleaned.isEmpty else { return "" }
+    let position = min(max(1, preferredPosition), cleaned.count)
+    return "\(position)del"
+}
+
+func exampleNonsenseChange(_ codingDNA: String) -> String {
+    let cleaned = cleanDNA(codingDNA)
+    guard cleaned.count >= 3 else { return "" }
+    let stops: Set<String> = ["TAA", "TAG", "TGA"]
+    var index = cleaned.startIndex
+    var codonStart = 0
+    while cleaned.distance(from: index, to: cleaned.endIndex) >= 3 {
+        let end = cleaned.index(index, offsetBy: 3)
+        let codon = String(cleaned[index..<end])
+        if !stops.contains(codon) {
+            let bases = Array(codon)
+            for offset in bases.indices {
+                for alternate in ["A", "C", "G", "T"] {
+                    let reference = String(bases[offset])
+                    guard alternate != reference else { continue }
+                    var mutated = bases
+                    mutated[offset] = Character(alternate)
+                    if stops.contains(String(mutated)) {
+                        return "\(codonStart + offset + 1) \(reference)>\(alternate)"
+                    }
+                }
+            }
+        }
+        index = end
+        codonStart += 3
+    }
+    return ""
+}
+
+func cleanDNA(_ sequence: String) -> String {
+    sequence.uppercased().filter { "ACGTU".contains($0) }.replacingOccurrences(of: "U", with: "T")
+}
+
+func characterAt(_ sequence: String, oneBasedPosition: Int) -> String {
+    let index = sequence.index(sequence.startIndex, offsetBy: oneBasedPosition - 1)
+    return String(sequence[index])
+}
+
+func alternateBase(_ base: String) -> String {
+    for candidate in ["T", "G", "C", "A"] where candidate != base {
+        return candidate
+    }
+    return "A"
 }

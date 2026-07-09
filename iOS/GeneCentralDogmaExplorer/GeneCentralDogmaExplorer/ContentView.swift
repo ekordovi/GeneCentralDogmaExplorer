@@ -78,10 +78,7 @@ struct SearchScreen: View {
                 }
 
                 if let error = viewModel.errorMessage {
-                    Section {
-                        Text(error)
-                            .foregroundStyle(.red)
-                    }
+                    ErrorNotice(message: error)
                 }
 
                 if let response = viewModel.response {
@@ -184,18 +181,83 @@ struct MutationScreen: View {
                         LabeledContent("Mutated codon", value: result.mutatedCodon)
                         LabeledContent("Original amino acid", value: result.originalAminoAcid)
                         LabeledContent("Changed amino acid", value: result.mutatedAminoAcid)
+                        Text(mutationEffectExplanation(result.effect))
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section {
+                    TextField("Mutation A", text: $viewModel.comparisonMutationA)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                    TextField("Mutation B", text: $viewModel.comparisonMutationB)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                    Button {
+                        Task { await viewModel.compareMutations() }
+                    } label: {
+                        Label("Compare Mutations", systemImage: "arrow.left.arrow.right")
+                    }
+                    .disabled(viewModel.isLoading)
+                } header: {
+                    Text("Compare two mutations")
+                } footer: {
+                    Text("Compare a missense-style edit with a nonsense or frameshift-style edit to see why the effect label changes.")
+                }
+
+                if let first = viewModel.comparisonResultA, let second = viewModel.comparisonResultB {
+                    Section("Comparison") {
+                        MutationComparisonCard(label: "Mutation A", result: first)
+                        MutationComparisonCard(label: "Mutation B", result: second)
+                        Text(first.effect == second.effect ? "Both edits are classified as \(first.effect)." : "Mutation A is \(first.effect); Mutation B is \(second.effect).")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
                 if let error = viewModel.errorMessage {
-                    Section {
-                        Text(error)
-                            .foregroundStyle(.red)
-                    }
+                    ErrorNotice(message: error)
                 }
             }
             .navigationTitle("Mutation")
         }
+    }
+}
+
+struct ErrorNotice: View {
+    var message: String
+
+    var body: some View {
+        Section {
+            Label {
+                Text(message)
+                    .foregroundStyle(.primary)
+            } icon: {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+            }
+        }
+    }
+}
+
+struct MutationComparisonCard: View {
+    var label: String
+    var result: MutationResult
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(.headline)
+            LabeledContent("Input", value: result.input)
+            LabeledContent("Effect", value: result.effect.capitalized)
+            LabeledContent("Codon", value: "\(result.originalCodon) -> \(result.mutatedCodon)")
+            LabeledContent("Amino acid", value: "\(result.originalAminoAcid) -> \(result.mutatedAminoAcid)")
+            Text(mutationEffectExplanation(result.effect))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
     }
 }
 

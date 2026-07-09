@@ -31,4 +31,13 @@ final class GeneCentralDogmaExplorerTests: XCTestCase {
         XCTAssertEqual(result.originalCodon, "GAG")
         XCTAssertEqual(result.mutatedCodon, "GTG")
     }
+
+    func testBundledHBBMutationExamplesAreTeachable() throws {
+        let response = try LocalExampleStore.loadHBBExample(bundle: Bundle(for: GeneDogmaViewModel.self))
+        XCTAssertEqual(exampleSubstitutionChange(response.sequences.codingDna), "20 A>T")
+        XCTAssertEqual(exampleNonsenseChange(response.sequences.codingDna), "19 G>T")
+        XCTAssertEqual(exampleDeletionChange(response.sequences.codingDna), "20del")
+        XCTAssertEqual(mutationEffectExplanation("missense"), "One amino acid changed. This can matter if that spot is important for the protein.")
+        XCTAssertEqual(mutationEffectExplanation("nonsense"), "The edit creates a stop signal, so translation may stop early.")
+    }
 }
