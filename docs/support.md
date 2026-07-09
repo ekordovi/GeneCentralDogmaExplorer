@@ -27,5 +27,10 @@ See `docs/privacy_policy.md` for the privacy policy.
 
 ## Contact
 
-For support or privacy questions, add a public contact email or support form here
-before App Store submission.
+For support or privacy questions, use the public GitHub issue tracker:
+
+https://github.com/ekordovi/GeneCentralDogmaExplorer/issues
+
+Before App Store submission, host this page at the support URL listed in App
+Store Connect. The hosted page should keep the same educational disclaimer,
+data-source note, mutation-scope limits, and privacy link.

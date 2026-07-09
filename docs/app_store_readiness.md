@@ -19,6 +19,9 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ## Backend
 
 - Deploy the FastAPI backend over HTTPS.
+- Recommended low-cost v1 path: Render, Fly.io, Railway, or another small
+  always-on HTTPS service. Avoid a free service that sleeps if the iOS app needs
+  reliable live lookup during demos.
 - Set `GENE_DOGMA_ALLOWED_ORIGINS` to the deployed web/support domains instead
   of leaving CORS open for every origin.
 - Confirm these endpoints work:
@@ -28,6 +31,8 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   - `POST /api/mutation`
 - Update `GeneDogmaAPIBaseURL` in the iOS app `Info.plist` with the deployed
   HTTPS base URL.
+- Add a simple uptime check for `/api/health` before TestFlight. A daily GitHub
+  Actions curl or provider health check is enough for v1.
 
 ## Native App Requirements
 
@@ -36,8 +41,9 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 - Confirm the educational disclaimer appears in the About tab.
 - Confirm the privacy text matches `docs/privacy_policy.md`.
 - Host `docs/support.md` and `docs/privacy_policy.md` on a public support site.
-- Replace the placeholder AppIcon asset with a real 1024 x 1024 icon before
-  App Store upload.
+- Confirm the AppIcon asset renders correctly in Xcode and on the simulator.
+- If crash/error logging is added, keep it privacy-compliant: no gene-search
+  payloads, no health data, no names, no contact data, and no analytics profile.
 
 ## TestFlight
 
@@ -52,6 +58,17 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   - Mutation simulator shows silent/missense/nonsense/frameshift labels.
   - Text wraps cleanly on small iPhones.
 
+## Screenshot Plan
+
+Capture App Store screenshots on a current iPhone simulator after the production
+API URL is configured:
+
+- First screen with the offline HBB example and central-dogma path visible.
+- HBB mutation simulator showing a missense edit and compare-two-mutations.
+- BRCA1 or TP53 live lookup showing trustworthy Ensembl-backed data.
+- Study mode or saved genes showing why a student or teacher would come back.
+- About screen showing the educational disclaimer and privacy posture.
+
 ## App Store Listing Draft
 
 - Subtitle: Learn genes from DNA to RNA to protein.
@@ -64,6 +81,17 @@ effects. Search a gene, explore its central-dogma path, compare transcripts, run
 simple mutation examples, and read beginner-friendly explanations.
 
 This app is for education only and is not medical advice.
+
+## Version Updates
+
+- `1.0`: HBB offline demo, live lookup, central-dogma path, simple mutation
+  simulator, compare-two-mutations, saved genes, study mode, privacy/support
+  docs, and AppIcon.
+- `1.1`: Better teacher mode, curated examples, and additional screenshot-ready
+  polish after TestFlight feedback.
+- Later: only add clinical or variant database integrations if the app wording,
+  privacy policy, and review notes stay clear that this is educational, not
+  medical decision support.
 
 ## Review Notes
 

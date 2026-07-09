@@ -17,6 +17,8 @@ the species alias and gene symbol resolve through Ensembl.
 ## Features
 
 - Search by gene symbol and species.
+- Opens with a bundled HBB teaching example and guided buttons for HBB, BRCA1,
+  TP53, search, and mutation simulation.
 - Supports common species presets and custom Ensembl species aliases.
 - Shows gene metadata: Ensembl ID, genomic region, strand, assembly, biotype,
   and description.
@@ -25,6 +27,7 @@ the species alias and gene symbol resolve through Ensembl.
   protein sequence where available.
 - Provides sequence summaries and FASTA downloads.
 - Includes a bundled HBB example for offline demonstration.
+- Simulates simple coding-DNA edits and compares two mutations side by side.
 - Exposes API endpoints for gene lookup and mutation simulation.
 - Includes a native SwiftUI iOS app with offline HBB demo support.
 
@@ -91,7 +94,7 @@ The bundled HBB demo works offline. Live lookup and mutation calls use
 Before App Store upload:
 
 - Install full Xcode and set it active with `xcode-select`.
-- Replace the placeholder AppIcon with real artwork.
+- Confirm the included AppIcon renders correctly in Xcode and on the simulator.
 - Deploy the API over HTTPS and update `GeneDogmaAPIBaseURL` in `Info.plist`
   with that URL.
 - Remove the local-networking App Transport Security exception if the production

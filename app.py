@@ -8,7 +8,7 @@ import pandas as pd
 import streamlit as st
 
 from gene_dogma import EnsemblError, fetch_gene_central_dogma
-from gene_dogma.sequence_utils import simulate_dna_mutation, summarize_sequence, to_mrna, translate_dna, wrap_fasta
+from gene_dogma.sequence_utils import clean_sequence, simulate_dna_mutation, summarize_sequence, to_mrna, translate_dna, wrap_fasta
 from gene_dogma.visualization import dogma_visual_html
 
 
@@ -1099,9 +1099,55 @@ def mutation_result_row(label: str, result: dict) -> dict:
     }
 
 
+def alternate_base(base: str) -> str:
+    for candidate in "TGCA":
+        if candidate != base:
+            return candidate
+    return "A"
+
+
+def example_substitution_change(coding_dna: str, preferred_position: int = 20) -> str:
+    cleaned = clean_sequence(coding_dna).replace("U", "T")
+    if not cleaned:
+        return ""
+    position = min(max(1, preferred_position), len(cleaned))
+    reference = cleaned[position - 1]
+    return f"{position} {reference}>{alternate_base(reference)}"
+
+
+def example_deletion_change(coding_dna: str, preferred_position: int = 20) -> str:
+    cleaned = clean_sequence(coding_dna).replace("U", "T")
+    if not cleaned:
+        return ""
+    position = min(max(1, preferred_position), len(cleaned))
+    return f"{position}del"
+
+
+def example_nonsense_change(coding_dna: str) -> str:
+    cleaned = clean_sequence(coding_dna).replace("U", "T")
+    stops = {"TAA", "TAG", "TGA"}
+    for codon_start in range(0, len(cleaned) - 2, 3):
+        original = cleaned[codon_start : codon_start + 3]
+        if original in stops or translate_dna(original) == "*":
+            continue
+        for offset, reference in enumerate(original):
+            for alternate in "ACGT":
+                if alternate == reference:
+                    continue
+                mutated = original[:offset] + alternate + original[offset + 1 :]
+                if mutated in stops:
+                    return f"{codon_start + offset + 1} {reference}>{alternate}"
+    return ""
+
+
 def mutation_simulator(sequences: dict, key_prefix: str = "mutation") -> None:
     coding_dna = sequences.get("coding_dna", "")
-    default_change = "20 A>T" if len(coding_dna) >= 20 else ""
+    default_change = example_substitution_change(coding_dna)
+    nonsense_change = example_nonsense_change(coding_dna)
+    deletion_change = example_deletion_change(coding_dna)
+    example_text = ", ".join(change for change in [default_change, nonsense_change, deletion_change] if change)
+    if example_text:
+        st.caption(f"Try: {example_text}")
     change = st.text_input(
         "DNA change",
         value=default_change,
@@ -1130,7 +1176,7 @@ def mutation_simulator(sequences: dict, key_prefix: str = "mutation") -> None:
     st.markdown("#### Compare two mutations")
     compare_cols = st.columns(2)
     change_a = compare_cols[0].text_input("Mutation A", value=default_change, key=f"{key_prefix}-compare-a")
-    change_b_default = "20del" if len(coding_dna) >= 20 else ""
+    change_b_default = nonsense_change or deletion_change
     change_b = compare_cols[1].text_input("Mutation B", value=change_b_default, key=f"{key_prefix}-compare-b")
     if st.button("Compare Mutations", key=f"{key_prefix}-compare-submit"):
         try:
@@ -1621,7 +1667,7 @@ if data:
 
     if st.session_state.get("show_mutation_quickstart"):
         st.subheader("Mutation quickstart")
-        st.write("This uses the selected coding DNA sequence. Try `20 A>T` for the classic HBB-style coding edit, then compare it with `20del`.")
+        st.write("This uses the selected coding DNA sequence. The app suggests edits that match the loaded gene, including a missense-style substitution and a nonsense example when one is easy to make.")
         if sequences.get("coding_dna"):
             mutation_simulator(sequences, key_prefix="mutation-quickstart")
         else:

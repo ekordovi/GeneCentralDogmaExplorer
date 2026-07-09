@@ -30,5 +30,7 @@ terms may be processed by the backend and Ensembl to return gene information.
 
 ## Contact
 
-For support or privacy questions, use the support page in `docs/support.md` or
-the support URL listed on the App Store product page.
+For support or privacy questions, use the public support page or GitHub issue
+tracker:
+
+https://github.com/ekordovi/GeneCentralDogmaExplorer/issues
