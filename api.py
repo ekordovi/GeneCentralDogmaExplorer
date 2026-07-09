@@ -19,6 +19,21 @@ EXAMPLE_CACHE = PROJECT_ROOT / "data" / "example_gene_cache.json"
 
 GeneFetcher = Callable[[str, str, str | None], dict[str, Any]]
 
+GENE_NOT_FOUND_MESSAGE = (
+    "We couldn't find that gene symbol for this species. Try checking the spelling "
+    "or selecting another species."
+)
+LIVE_LOOKUP_UNAVAILABLE_MESSAGE = (
+    "Live gene lookup is temporarily unavailable. Try the bundled HBB example, or try again soon."
+)
+GENE_LOOKUP_FAILED_MESSAGE = (
+    "We couldn't load that gene right now. Try HBB, BRCA1, TP53, or the bundled HBB example."
+)
+MUTATION_FORMAT_MESSAGE = "Try a simple coding-DNA edit like 20 A>T, 20del, or 20insA."
+MUTATION_MISMATCH_MESSAGE = (
+    "That edit does not match the selected coding DNA. Try one of the suggested examples for this gene."
+)
+
 FAMOUS_GENE_EXAMPLES: list[dict[str, str]] = [
     {
         "symbol": "HBB",
@@ -77,6 +92,15 @@ def parse_allowed_origins(raw_origins: str | None) -> list[str]:
     return origins or ["*"]
 
 
+def friendly_mutation_error(exc: ValueError) -> str:
+    message = str(exc)
+    if "Reference base mismatch" in message:
+        return MUTATION_MISMATCH_MESSAGE
+    if "Position must be" in message:
+        return message
+    return MUTATION_FORMAT_MESSAGE
+
+
 def create_app(
     gene_fetcher: GeneFetcher = default_gene_fetcher,
     allowed_origins: list[str] | None = None,
@@ -115,18 +139,18 @@ def create_app(
         try:
             return gene_fetcher(symbol.strip(), species.strip(), transcript_id.strip() if transcript_id else None)
         except EnsemblError as exc:
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
+            raise HTTPException(status_code=502, detail=LIVE_LOOKUP_UNAVAILABLE_MESSAGE) from exc
         except LookupError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
+            raise HTTPException(status_code=404, detail=GENE_NOT_FOUND_MESSAGE) from exc
         except Exception as exc:
-            raise HTTPException(status_code=500, detail=f"Gene lookup failed: {exc}") from exc
+            raise HTTPException(status_code=500, detail=GENE_LOOKUP_FAILED_MESSAGE) from exc
 
     @app.post("/api/mutation")
     def mutation(request: MutationRequest) -> dict[str, Any]:
         try:
             return simulate_dna_mutation(request.coding_dna, request.change)
         except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+            raise HTTPException(status_code=400, detail=friendly_mutation_error(exc)) from exc
 
     return app
 

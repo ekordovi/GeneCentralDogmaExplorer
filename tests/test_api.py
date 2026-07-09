@@ -3,7 +3,14 @@ import pytest
 fastapi = pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
 
-from api import create_app, parse_allowed_origins
+from api import (
+    GENE_LOOKUP_FAILED_MESSAGE,
+    GENE_NOT_FOUND_MESSAGE,
+    LIVE_LOOKUP_UNAVAILABLE_MESSAGE,
+    MUTATION_MISMATCH_MESSAGE,
+    create_app,
+    parse_allowed_origins,
+)
 from gene_dogma import EnsemblError
 
 
@@ -56,6 +63,14 @@ def failing_gene(symbol: str, species: str, transcript_id: str | None = None) ->
     raise EnsemblError("Fake Ensembl outage")
 
 
+def missing_gene(symbol: str, species: str, transcript_id: str | None = None) -> dict:
+    raise LookupError("Internal lookup text with database details")
+
+
+def broken_gene(symbol: str, species: str, transcript_id: str | None = None) -> dict:
+    raise RuntimeError("Secret stack detail")
+
+
 def test_example_returns_hbb_fixture():
     client = TestClient(create_app(fake_gene))
     response = client.get("/api/example")
@@ -86,7 +101,24 @@ def test_gene_lookup_reports_ensembl_failure():
     client = TestClient(create_app(failing_gene))
     response = client.get("/api/gene", params={"symbol": "FAKE"})
     assert response.status_code == 502
-    assert "Fake Ensembl outage" in response.json()["detail"]
+    assert response.json()["detail"] == LIVE_LOOKUP_UNAVAILABLE_MESSAGE
+    assert "Fake Ensembl outage" not in response.text
+
+
+def test_gene_lookup_reports_missing_symbol_without_raw_details():
+    client = TestClient(create_app(missing_gene))
+    response = client.get("/api/gene", params={"symbol": "NOPE"})
+    assert response.status_code == 404
+    assert response.json()["detail"] == GENE_NOT_FOUND_MESSAGE
+    assert "database details" not in response.text
+
+
+def test_gene_lookup_reports_generic_failure_without_raw_exception():
+    client = TestClient(create_app(broken_gene))
+    response = client.get("/api/gene", params={"symbol": "FAKE"})
+    assert response.status_code == 500
+    assert response.json()["detail"] == GENE_LOOKUP_FAILED_MESSAGE
+    assert "Secret stack detail" not in response.text
 
 
 def test_non_coding_gene_can_return_without_protein():
@@ -109,7 +141,8 @@ def test_mutation_validation_error():
     client = TestClient(create_app(fake_gene))
     response = client.post("/api/mutation", json={"coding_dna": "ATGGAGTAA", "change": "5 C>T"})
     assert response.status_code == 400
-    assert "Reference base mismatch" in response.json()["detail"]
+    assert response.json()["detail"] == MUTATION_MISMATCH_MESSAGE
+    assert "Reference base mismatch" not in response.text
 
 
 def test_parse_allowed_origins_defaults_to_dev_wildcard():

@@ -231,6 +231,9 @@ final class GeneDogmaViewModel: ObservableObject {
 func friendlyErrorMessage(_ error: Error, context: String = "lookup") -> String {
     let message = error.localizedDescription
     if context == "mutation" {
+        if message.contains("does not match") || message.contains("Try a simple coding-DNA edit") {
+            return message
+        }
         if message.contains("Reference base mismatch") {
             return "That edit does not match the selected coding DNA. Try one of the suggested examples for this gene."
         }
@@ -238,6 +241,9 @@ func friendlyErrorMessage(_ error: Error, context: String = "lookup") -> String 
             return message
         }
         return "Try a simple coding-DNA edit like 20 A>T, 20del, or 20insA."
+    }
+    if message.hasPrefix("We couldn't") || message.hasPrefix("Live gene lookup") || message.hasPrefix("We could not") {
+        return message
     }
     if message.localizedCaseInsensitiveContains("not found") || message.localizedCaseInsensitiveContains("lookup") {
         return "We could not find that gene symbol for this species. Try checking the spelling or selecting another species."
