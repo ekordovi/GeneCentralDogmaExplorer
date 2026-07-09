@@ -62,6 +62,31 @@ GENE_DOGMA_API_HEALTH_URL=https://your-api-host.example/api/health
 Then run the `API Health` workflow manually once. If the URL is not configured,
 the workflow exits successfully with a notice instead of failing the repo.
 
+## Public Support Pages
+
+The `docs/` folder contains static pages that can be served by GitHub Pages:
+
+- `docs/index.html`
+- `docs/support.html`
+- `docs/privacy.html`
+
+In GitHub, enable Pages with source `main` and folder `/docs`. Use the resulting
+support URL in App Store Connect.
+
+## Verification Command
+
+Run the offline v1 verifier before demos:
+
+```bash
+python scripts/verify_v1.py
+```
+
+After deployment, verify the hosted API:
+
+```bash
+python scripts/verify_v1.py --base-url https://your-api-host.example --live-lookup
+```
+
 ## Privacy-Safe Error Logging
 
 Version 1 does not need analytics. If crash/error logging is added later, do not

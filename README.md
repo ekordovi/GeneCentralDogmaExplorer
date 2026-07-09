@@ -113,6 +113,18 @@ python -m pytest
 
 The API tests require `fastapi` and `httpx` from `requirements.txt`.
 
+To verify the core v1 learning loop without network access:
+
+```bash
+python scripts/verify_v1.py
+```
+
+To verify a deployed API after hosting:
+
+```bash
+python scripts/verify_v1.py --base-url https://your-api-host.example --live-lookup
+```
+
 ## Data Source
 
 Live lookups use Ensembl REST endpoints:

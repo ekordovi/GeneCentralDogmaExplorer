@@ -42,7 +42,8 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 - Confirm the app is not a plain WebView.
 - Confirm the educational disclaimer appears in the About tab.
 - Confirm the privacy text matches `docs/privacy_policy.md`.
-- Host `docs/support.md` and `docs/privacy_policy.md` on a public support site.
+- Host the static `docs/support.html` and `docs/privacy.html` pages on a public
+  support site, such as GitHub Pages from the `/docs` folder.
 - Confirm the AppIcon asset renders correctly in Xcode and on the simulator.
 - If crash/error logging is added, keep it privacy-compliant: no gene-search
   payloads, no health data, no names, no contact data, and no analytics profile.
@@ -59,6 +60,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   - Failed lookup shows a friendly error.
   - Mutation simulator shows silent/missense/nonsense/frameshift labels.
   - Text wraps cleanly on small iPhones.
+- Run `python scripts/verify_v1.py` before every demo.
 
 ## Screenshot Plan
 
