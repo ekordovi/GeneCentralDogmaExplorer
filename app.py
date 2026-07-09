@@ -272,6 +272,39 @@ st.markdown(
         border-radius: 8px;
         margin: 0.85rem 0;
       }
+      .guide-panel {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 0.95rem;
+        margin: 0.85rem 0 1rem;
+      }
+      .guide-title {
+        color: #111827;
+        font-weight: 850;
+        margin-bottom: 0.25rem;
+      }
+      .guide-copy {
+        color: #4b5563;
+        line-height: 1.4;
+        margin-bottom: 0.75rem;
+      }
+      .friendly-error {
+        border-left: 4px solid #ef476f;
+        background: #fff7f8;
+        color: #111827;
+        padding: 0.85rem 0.95rem;
+        border-radius: 8px;
+        margin: 0.75rem 0;
+      }
+      .mode-note {
+        border-left: 4px solid #1f9d8a;
+        background: #f4fbfa;
+        color: #374151;
+        padding: 0.75rem 0.9rem;
+        border-radius: 8px;
+        margin: 0.75rem 0;
+      }
       .sequence-summary-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -475,6 +508,31 @@ def load_example() -> dict:
 @st.cache_data(show_spinner=True)
 def cached_lookup(symbol: str, species: str, transcript_id: str | None = None) -> dict:
     return fetch_gene_central_dogma(symbol=symbol, species=species, preferred_transcript_id=transcript_id)
+
+
+def friendly_error_message(exc: Exception, context: str = "lookup") -> str:
+    text = str(exc)
+    if context == "mutation":
+        if "Reference base mismatch" in text:
+            return f"That edit does not match this coding DNA. {text}"
+        if "Position must be" in text:
+            return text
+        return "Try a simple coding-DNA edit like 20 A>T, 20del, or 20insA."
+    if isinstance(exc, EnsemblError):
+        return (
+            "I could not load that live Ensembl gene right now. Try HBB, BRCA1, or TP53, "
+            "or use the built-in HBB demo while the live lookup catches up."
+        )
+    return "Something went sideways while loading this gene. Try another symbol or reload the built-in HBB demo."
+
+
+def show_friendly_error(exc: Exception, context: str = "lookup") -> None:
+    st.markdown(
+        f'<div class="friendly-error">{escape_html(friendly_error_message(exc, context))}</div>',
+        unsafe_allow_html=True,
+    )
+    with st.expander("Technical detail"):
+        st.code(str(exc), language="text")
 
 
 def short_sequence(sequence: str, flank: int = 240) -> str:
@@ -1018,15 +1076,43 @@ def central_dogma_map(data: dict) -> None:
     sequence_panel(stage[0], stage[2], stage[3], stage[4], f"dogma-map-{selected_stage}")
 
 
-def mutation_simulator(sequences: dict) -> None:
+def mutation_effect_explanation(effect: str) -> str:
+    explanations = {
+        "silent": "The DNA changed, but the codon still points to the same amino acid.",
+        "missense": "One amino acid changed. This can matter if that residue is important for the protein.",
+        "nonsense": "The edit creates a stop signal, so translation may stop early.",
+        "frameshift": "The reading frame shifts, so many downstream codons can change.",
+    }
+    return explanations.get(effect, "The coding sequence changed.")
+
+
+def mutation_result_row(label: str, result: dict) -> dict:
+    return {
+        "edit": label,
+        "type": result["mutation_type"],
+        "position": result["position"],
+        "codon": result["codon_number"],
+        "DNA codon": f"{result['original_codon'] or 'NA'} -> {result['mutated_codon'] or 'NA'}",
+        "AA": f"{result['original_amino_acid'] or 'NA'} -> {result['mutated_amino_acid'] or 'NA'}",
+        "effect": result["effect"],
+        "plain English": mutation_effect_explanation(result["effect"]),
+    }
+
+
+def mutation_simulator(sequences: dict, key_prefix: str = "mutation") -> None:
     coding_dna = sequences.get("coding_dna", "")
     default_change = "20 A>T" if len(coding_dna) >= 20 else ""
-    change = st.text_input("DNA change", value=default_change, placeholder="20 A>T, 20del, or 20insA")
-    if st.button("Simulate Mutation"):
+    change = st.text_input(
+        "DNA change",
+        value=default_change,
+        placeholder="20 A>T, 20del, or 20insA",
+        key=f"{key_prefix}-single-change",
+    )
+    if st.button("Simulate Mutation", key=f"{key_prefix}-single-submit"):
         try:
             result = simulate_dna_mutation(coding_dna, change)
         except ValueError as exc:
-            st.error(str(exc))
+            show_friendly_error(exc, context="mutation")
             return
 
         cols = st.columns(5)
@@ -1035,7 +1121,30 @@ def mutation_simulator(sequences: dict) -> None:
         cols[2].metric("Original AA", result["original_amino_acid"] or "NA")
         cols[3].metric("Changed AA", result["mutated_amino_acid"] or "NA")
         cols[4].metric("Effect", result["effect"])
+        st.markdown(
+            f'<div class="mode-note">{escape_html(mutation_effect_explanation(result["effect"]))}</div>',
+            unsafe_allow_html=True,
+        )
         st.code(short_sequence(result["mutated_dna"]), language="text")
+
+    st.markdown("#### Compare two mutations")
+    compare_cols = st.columns(2)
+    change_a = compare_cols[0].text_input("Mutation A", value=default_change, key=f"{key_prefix}-compare-a")
+    change_b_default = "20del" if len(coding_dna) >= 20 else ""
+    change_b = compare_cols[1].text_input("Mutation B", value=change_b_default, key=f"{key_prefix}-compare-b")
+    if st.button("Compare Mutations", key=f"{key_prefix}-compare-submit"):
+        try:
+            result_a = simulate_dna_mutation(coding_dna, change_a)
+            result_b = simulate_dna_mutation(coding_dna, change_b)
+        except ValueError as exc:
+            show_friendly_error(exc, context="mutation")
+            return
+        rows = [mutation_result_row(change_a, result_a), mutation_result_row(change_b, result_b)]
+        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+        if result_a["effect"] == result_b["effect"]:
+            st.info(f"Both edits are classified as {result_a['effect']}. The sequence changes may still differ.")
+        else:
+            st.info(f"Mutation A is {result_a['effect']}; mutation B is {result_b['effect']}. Compare the AA and codon columns to see why.")
 
 
 def protein_features(sequences: dict, translation: dict) -> pd.DataFrame:
@@ -1347,7 +1456,7 @@ def render_isoform_section(transcripts: list[dict], selected: dict, symbol: str,
                     st.session_state["dogma_data"] = cached_lookup(symbol or gene["display_name"], species, selected_tx_id)
                     st.rerun()
                 except Exception as exc:
-                    st.error(f"Transcript reload failed: {exc}")
+                    show_friendly_error(exc)
 
 
 def render_study_section(data: dict) -> None:
@@ -1364,6 +1473,62 @@ def render_study_section(data: dict) -> None:
         st.write(question["explanation"])
 
 
+def load_famous_gene(symbol: str) -> None:
+    if symbol == "HBB":
+        st.session_state["dogma_data"] = load_example()
+    else:
+        st.session_state["dogma_data"] = cached_lookup(symbol, "homo_sapiens")
+    st.session_state["loaded_example_default"] = symbol == "HBB"
+
+
+def render_guided_start(default_species: str) -> None:
+    st.markdown(
+        """
+        <div class="guide-panel">
+          <div class="guide-title">Start with a real gene story</div>
+          <div class="guide-copy">
+            Open the offline HBB classic, try a famous live gene, search any Ensembl symbol, or jump straight into a mutation example.
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    cols = st.columns(5)
+    if cols[0].button("Explore HBB", type="primary", use_container_width=True):
+        load_famous_gene("HBB")
+        st.success("Loaded the offline HBB teaching example.")
+    if cols[1].button("Try BRCA1", use_container_width=True):
+        try:
+            load_famous_gene("BRCA1")
+            st.success("Loaded BRCA1.")
+        except Exception as exc:
+            show_friendly_error(exc)
+    if cols[2].button("Try TP53", use_container_width=True):
+        try:
+            load_famous_gene("TP53")
+            st.success("Loaded TP53.")
+        except Exception as exc:
+            show_friendly_error(exc)
+    if cols[3].button("Search any gene", use_container_width=True):
+        st.session_state["show_inline_search"] = not st.session_state.get("show_inline_search", False)
+    if cols[4].button("Simulate mutation", use_container_width=True):
+        st.session_state["show_mutation_quickstart"] = True
+
+    if st.session_state.get("show_inline_search"):
+        with st.form("inline-gene-search"):
+            search_cols = st.columns([2, 2, 1])
+            inline_symbol = search_cols[0].text_input("Gene symbol", value="HBB", key="inline-symbol").strip()
+            inline_species = search_cols[1].text_input("Species alias", value=default_species, key="inline-species").strip()
+            submitted = search_cols[2].form_submit_button("Load", use_container_width=True)
+        if submitted and inline_symbol:
+            try:
+                st.session_state["dogma_data"] = cached_lookup(inline_symbol, inline_species or "homo_sapiens")
+                st.session_state["loaded_example_default"] = False
+                st.success(f"Loaded {inline_symbol.upper()}.")
+            except Exception as exc:
+                show_friendly_error(exc)
+
+
 st.title("Gene Central Dogma Explorer")
 st.caption("Start with a gene, then follow its DNA -> RNA -> protein story in plain English.")
 
@@ -1373,8 +1538,18 @@ if "loaded_example_default" not in st.session_state:
     st.session_state["loaded_example_default"] = True
 if "saved_genes" not in st.session_state:
     st.session_state["saved_genes"] = []
+if "learning_mode" not in st.session_state:
+    st.session_state["learning_mode"] = "Beginner"
 
 with st.sidebar:
+    st.header("Mode")
+    st.session_state["learning_mode"] = st.segmented_control(
+        "Reading level",
+        ["Beginner", "Advanced"],
+        default=st.session_state["learning_mode"],
+        help="Beginner keeps the flow plain-English. Advanced keeps the same app, with more technical tables and raw data available.",
+    )
+    st.divider()
     st.header("Lookup")
     species_label = st.selectbox("Species", list(SPECIES), index=0)
     custom_species = st.text_input("Custom Ensembl species alias", value="", help="Optional. Example: homo_sapiens.")
@@ -1397,29 +1572,21 @@ with st.sidebar:
 
 data = None
 if run_example:
-    st.session_state["dogma_data"] = load_example()
-    st.session_state["loaded_example_default"] = True
+    load_famous_gene("HBB")
 elif run_famous:
     try:
-        if famous_symbol == "HBB":
-            st.session_state["dogma_data"] = load_example()
-        else:
-            st.session_state["dogma_data"] = cached_lookup(famous_symbol, "homo_sapiens")
-        st.session_state["loaded_example_default"] = False
+        load_famous_gene(famous_symbol)
         st.success(f"Loaded {famous_symbol}.")
-    except EnsemblError as exc:
-        st.error(str(exc))
     except Exception as exc:
-        st.error(f"Example lookup failed: {exc}")
+        show_friendly_error(exc)
 elif run_lookup and symbol:
     try:
         st.session_state["dogma_data"] = cached_lookup(symbol, species)
         st.session_state["loaded_example_default"] = False
-    except EnsemblError as exc:
-        st.error(str(exc))
     except Exception as exc:
-        st.error(f"Lookup failed: {exc}")
+        show_friendly_error(exc)
 
+render_guided_start(species)
 data = st.session_state["dogma_data"]
 if data is None:
     st.info("Enter a gene symbol and click **Look Up Gene**, or use the bundled HBB example.")
@@ -1434,11 +1601,31 @@ if data:
     if st.session_state.get("loaded_example_default"):
         st.info("Showing the bundled HBB demo. Search or load a famous example to switch genes.")
 
+    mode = st.session_state.get("learning_mode", "Beginner")
+    if mode == "Beginner":
+        st.markdown(
+            '<div class="mode-note">Beginner mode: start with the big story first. Raw sequences and technical tables are still available in Dogma and Advanced.</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            '<div class="mode-note">Advanced mode: identifiers, transcript tables, sequence downloads, and raw JSON are available in the lower tabs.</div>',
+            unsafe_allow_html=True,
+        )
+
     render_web_hero(data)
     render_quick_facts(gene)
     render_clickable_gene_details(data, selected, translation, transcripts)
     st.markdown(dogma_visual_html(data), unsafe_allow_html=True)
     render_sequence_strip(sequences)
+
+    if st.session_state.get("show_mutation_quickstart"):
+        st.subheader("Mutation quickstart")
+        st.write("This uses the selected coding DNA sequence. Try `20 A>T` for the classic HBB-style coding edit, then compare it with `20del`.")
+        if sequences.get("coding_dna"):
+            mutation_simulator(sequences, key_prefix="mutation-quickstart")
+        else:
+            st.warning("No coding DNA returned, so local codon mutation simulation is unavailable.")
 
     action_cols = st.columns([1, 1, 2])
     with action_cols[0]:
@@ -1494,7 +1681,7 @@ if data:
         st.subheader("Mutation simulator")
         st.write("Type a simple coding-DNA edit and see how the codon and amino acid change.")
         if sequences.get("coding_dna"):
-            mutation_simulator(sequences)
+            mutation_simulator(sequences, key_prefix="mutation-tab")
         else:
             st.warning("No coding DNA returned, so local codon mutation simulation is unavailable.")
         st.caption("This is a simple coding-DNA teaching tool. It does not parse HGVS, map genomic coordinates, or classify clinical variants.")
