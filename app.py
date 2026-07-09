@@ -26,6 +26,33 @@ SPECIES = {
     "Arabidopsis": "arabidopsis_thaliana",
 }
 
+HUMAN_CHROMOSOME_LENGTHS = {
+    "1": 248_956_422,
+    "2": 242_193_529,
+    "3": 198_295_559,
+    "4": 190_214_555,
+    "5": 181_538_259,
+    "6": 170_805_979,
+    "7": 159_345_973,
+    "8": 145_138_636,
+    "9": 138_394_717,
+    "10": 133_797_422,
+    "11": 135_086_622,
+    "12": 133_275_309,
+    "13": 114_364_328,
+    "14": 107_043_718,
+    "15": 101_991_189,
+    "16": 90_338_345,
+    "17": 83_257_441,
+    "18": 80_373_285,
+    "19": 58_617_616,
+    "20": 64_444_167,
+    "21": 46_709_983,
+    "22": 50_818_468,
+    "X": 156_040_895,
+    "Y": 57_227_415,
+}
+
 FAMOUS_GENES = {
     "HBB": {
         "label": "Hemoglobin beta",
@@ -291,6 +318,91 @@ st.markdown(
         padding: 0.75rem 0.9rem;
         margin: 0.7rem 0;
       }
+      .detail-panel {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 1rem;
+        margin: 0.85rem 0 1rem;
+      }
+      .detail-title {
+        color: #111827;
+        font-size: 1.15rem;
+        font-weight: 850;
+        margin-bottom: 0.35rem;
+      }
+      .detail-copy {
+        color: #374151;
+        line-height: 1.45;
+      }
+      .detail-kv-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin-top: 0.85rem;
+      }
+      .detail-kv {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #f9fafb;
+        padding: 0.7rem;
+      }
+      .detail-kv-label {
+        color: #4b5563;
+        font-size: 0.78rem;
+        margin-bottom: 0.25rem;
+      }
+      .detail-kv-value {
+        color: #111827;
+        font-weight: 850;
+        overflow-wrap: anywhere;
+      }
+      .chromosome-track {
+        position: relative;
+        height: 38px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #e5e7eb, #cbd5e1);
+        border: 1px solid #cbd5e1;
+        margin: 1rem 0 0.5rem;
+        overflow: hidden;
+      }
+      .chromosome-band {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: rgba(17, 24, 39, 0.16);
+      }
+      .gene-marker {
+        position: absolute;
+        top: 4px;
+        bottom: 4px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #3a86ff, #ef476f);
+        box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.18);
+      }
+      .chromosome-label-row {
+        display: flex;
+        justify-content: space-between;
+        color: #4b5563;
+        font-size: 0.8rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .mini-flow {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.5rem;
+        margin-top: 0.85rem;
+      }
+      .mini-node {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        color: #111827;
+        background: #f9fafb;
+        padding: 0.65rem;
+        text-align: center;
+        font-weight: 800;
+      }
       .stTabs [data-baseweb="tab-list"] {
         gap: 0.25rem;
       }
@@ -329,7 +441,9 @@ st.markdown(
         }
         .story-grid,
         .sequence-strip,
-        .sequence-summary-grid {
+        .sequence-summary-grid,
+        .detail-kv-grid,
+        .mini-flow {
           grid-template-columns: 1fr;
         }
         .beginner-card {
@@ -543,6 +657,229 @@ def sequence_summary_cards(summary: dict) -> str:
         )
     html.append("</div>")
     return "".join(html)
+
+
+def chromosome_key(gene: dict) -> str:
+    return str(gene.get("seq_region_name") or "").replace("chr", "").upper()
+
+
+def detail_kv_grid(items: list[tuple[str, str]]) -> str:
+    html = ['<div class="detail-kv-grid">']
+    for label, value in items:
+        html.append(
+            (
+                '<div class="detail-kv">'
+                f'<div class="detail-kv-label">{escape_html(label)}</div>'
+                f'<div class="detail-kv-value">{escape_html(value)}</div>'
+                "</div>"
+            )
+        )
+    html.append("</div>")
+    return "".join(html)
+
+
+def render_location_detail(gene: dict) -> None:
+    chrom = chromosome_key(gene)
+    start = int(gene.get("start") or 0)
+    end = int(gene.get("end") or 0)
+    chrom_length = HUMAN_CHROMOSOME_LENGTHS.get(chrom)
+    track_html = ""
+    if chrom_length and start and end:
+        left = max(0.0, min(100.0, start / chrom_length * 100))
+        width = max(0.6, min(100.0 - left, (end - start + 1) / chrom_length * 100))
+        bands = "".join(f'<span class="chromosome-band" style="left:{pct}%"></span>' for pct in [20, 40, 60, 80])
+        track_html = f"""
+              <div class="chromosome-track">
+                {bands}
+                <span class="gene-marker" style="left:{left:.2f}%; width:{width:.2f}%"></span>
+              </div>
+              <div class="chromosome-label-row">
+                <span>chr{escape_html(chrom)}:1</span>
+                <span>{chrom_length:,} bp</span>
+              </div>
+        """
+    else:
+        track_html = """
+          <div class="stage-note">A scaled chromosome track is available for human chromosomes when start/end coordinates are returned.</div>
+        """
+    st.markdown(
+        f"""
+        <div class="detail-panel">
+          <div class="detail-title">Chromosome location</div>
+          <div class="detail-copy">
+            {escape_html(gene.get("display_name", "This gene"))} is located on chromosome {escape_html(chrom or "?")}
+            at {escape_html(gene_locus(gene))}. The marker below shows the approximate position across the chromosome.
+          </div>
+          {track_html}
+          {detail_kv_grid([
+              ("Assembly", str(gene.get("assembly_name") or "NA")),
+              ("Start", f"{start:,}" if start else "NA"),
+              ("End", f"{end:,}" if end else "NA"),
+              ("Strand", strand_label(gene.get("strand"))),
+              ("Gene span", f"{end - start + 1:,} bp" if start and end else "NA"),
+              ("Coordinate system", "Ensembl gene locus"),
+          ])}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_gene_type_detail(gene: dict) -> None:
+    biotype = gene.get("biotype") or "NA"
+    explanation = (
+        "Protein-coding genes can produce transcripts with coding sequence, which can be translated into an amino acid chain."
+        if biotype == "protein_coding"
+        else "This biotype may work through RNA function, regulation, or transcript processing rather than a translated protein."
+    )
+    st.markdown(
+        f"""
+        <div class="detail-panel">
+          <div class="detail-title">Gene type: {escape_html(biotype)}</div>
+          <div class="detail-copy">{escape_html(explanation)}</div>
+          <div class="mini-flow">
+            <div class="mini-node">Gene</div>
+            <div class="mini-node">Transcript</div>
+            <div class="mini-node">Coding sequence</div>
+            <div class="mini-node">Protein if translated</div>
+          </div>
+          {detail_kv_grid([("Biotype", biotype), ("Source", str(gene.get("source") or "Ensembl")), ("Object type", str(gene.get("object_type") or "Gene"))])}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_assembly_detail(gene: dict) -> None:
+    assembly = str(gene.get("assembly_name") or "NA")
+    st.markdown(
+        f"""
+        <div class="detail-panel">
+          <div class="detail-title">Genome assembly</div>
+          <div class="detail-copy">
+            The assembly is the reference genome coordinate system used for this gene. Coordinates only make sense relative
+            to a specific assembly, so {escape_html(gene_locus(gene))} means this locus on {escape_html(assembly)}.
+          </div>
+          {detail_kv_grid([("Assembly", assembly), ("Chromosome", chromosome_key(gene) or "NA"), ("Locus", gene_locus(gene))])}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_transcript_detail(selected: dict, transcripts: list[dict]) -> None:
+    exons = selected.get("Exon") or selected.get("exons") or []
+    translation = selected.get("Translation") or {}
+    st.markdown(
+        f"""
+        <div class="detail-panel">
+          <div class="detail-title">Selected transcript</div>
+          <div class="detail-copy">
+            A transcript is the RNA version of the gene that this app follows through splicing, coding sequence, and protein translation.
+            One gene can have many transcripts, so picking the transcript changes the central-dogma story.
+          </div>
+          {detail_kv_grid([("Transcript ID", str(selected.get("id") or "NA")), ("Name", str(selected.get("display_name") or "NA")), ("Canonical", "Yes" if selected.get("is_canonical") else "No"), ("Transcript length", f"{int(selected.get("length") or 0):,} bases" if selected.get("length") else "NA"), ("Exons returned", str(len(exons)) if exons else "Not in response"), ("Translation", str(translation.get("id") or "No protein translation"))])}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if len(transcripts) > 1:
+        st.caption(f"Ensembl returned {len(transcripts):,} transcript records for this gene. The selected transcript is highlighted in the Isoforms table below.")
+
+
+def render_protein_detail(translation: dict, sequences: dict) -> None:
+    protein = sequences.get("protein", "")
+    st.markdown(
+        f"""
+        <div class="detail-panel">
+          <div class="detail-title">Protein product</div>
+          <div class="detail-copy">
+            The protein product is the amino acid chain returned for the selected translated transcript. For HBB, this is beta-globin,
+            one chain of adult hemoglobin.
+          </div>
+          {detail_kv_grid([("Protein ID", str(translation.get("id") or "NA")), ("Length", f"{len(protein):,} amino acids"), ("Starts with", protein[:12] or "NA"), ("Ends with", protein[-12:] or "NA")])}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if protein:
+        st.markdown(
+            f'<div class="readable-sequence">{escape_html(wrap_for_display(protein, line_width=60, max_symbols=360))}</div>',
+            unsafe_allow_html=True,
+        )
+
+
+def render_exons_detail(selected: dict) -> None:
+    exons = selected.get("Exon") or selected.get("exons") or []
+    st.markdown(
+        """
+        <div class="detail-panel">
+          <div class="detail-title">Exons and introns</div>
+          <div class="detail-copy">
+            Exons are transcript pieces that remain after RNA processing. Introns are the genomic intervals removed during splicing.
+            This is the transition between the broad gene locus and the spliced mRNA used later in the central dogma.
+          </div>
+          <div class="mini-flow">
+            <div class="mini-node">Gene locus</div>
+            <div class="mini-node">Exons + introns</div>
+            <div class="mini-node">Spliced transcript</div>
+            <div class="mini-node">CDS/protein</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if exons:
+        st.dataframe(
+            pd.DataFrame(
+                [
+                    {
+                        "exon_id": exon.get("id", ""),
+                        "start": exon.get("start", ""),
+                        "end": exon.get("end", ""),
+                        "strand": strand_label(exon.get("strand")),
+                    }
+                    for exon in exons
+                ]
+            ),
+            width="stretch",
+            hide_index=True,
+        )
+    else:
+        st.info("Exon coordinates were not included in this lookup response, so the app explains the concept and shows sequence context instead.")
+
+
+def render_clickable_gene_details(data: dict, selected: dict, translation: dict, transcripts: list[dict]) -> None:
+    st.subheader("Tap a gene card to inspect it")
+    details = [
+        ("Location", "where it sits on the chromosome"),
+        ("Gene Type", "what kind of gene this is"),
+        ("Assembly", "which genome map is being used"),
+        ("Transcript", "the RNA version selected"),
+        ("Protein", "the amino acid product"),
+        ("Exons", "what gets kept after splicing"),
+    ]
+    if "gene_detail_focus" not in st.session_state:
+        st.session_state["gene_detail_focus"] = "Location"
+    cols = st.columns(3)
+    for index, (label, caption) in enumerate(details):
+        with cols[index % 3]:
+            if st.button(f"{label}\n{caption}", key=f"detail-{label}", use_container_width=True):
+                st.session_state["gene_detail_focus"] = label
+
+    focus = st.session_state["gene_detail_focus"]
+    if focus == "Location":
+        render_location_detail(data["gene"])
+    elif focus == "Gene Type":
+        render_gene_type_detail(data["gene"])
+    elif focus == "Assembly":
+        render_assembly_detail(data["gene"])
+    elif focus == "Transcript":
+        render_transcript_detail(selected, transcripts)
+    elif focus == "Protein":
+        render_protein_detail(translation, data["sequences"])
+    else:
+        render_exons_detail(selected)
 
 
 def transcript_rows(transcripts: list[dict], selected_id: str | None = None) -> list[dict]:
@@ -1099,6 +1436,7 @@ if data:
 
     render_web_hero(data)
     render_quick_facts(gene)
+    render_clickable_gene_details(data, selected, translation, transcripts)
     st.markdown(dogma_visual_html(data), unsafe_allow_html=True)
     render_sequence_strip(sequences)
 
