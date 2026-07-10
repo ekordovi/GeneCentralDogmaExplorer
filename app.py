@@ -142,6 +142,20 @@ st.markdown(
         overflow-wrap: anywhere !important;
         word-break: break-word !important;
       }
+      .beginner-card,
+      .quick-fact,
+      .web-hero,
+      .story-card,
+      .sequence-chip,
+      .sequence-summary-card,
+      .readable-sequence,
+      .stage-note,
+      .detail-panel,
+      .detail-kv,
+      .stage-card,
+      .sequence-preview-panel {
+        color-scheme: light;
+      }
       div[data-testid="stDataFrame"] {
         width: 100%;
       }
@@ -329,6 +343,58 @@ st.markdown(
         font-weight: 850;
         overflow-wrap: anywhere;
       }
+      .sequence-preview-panel {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 0.85rem;
+        margin: 0.7rem 0 0.9rem;
+      }
+      .sequence-preview-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        align-items: baseline;
+        margin-bottom: 0.65rem;
+      }
+      .sequence-preview-title {
+        color: #111827;
+        font-weight: 850;
+      }
+      .sequence-preview-count {
+        color: #4b5563;
+        font-size: 0.82rem;
+      }
+      .sequence-blocks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2rem;
+        max-width: 100%;
+      }
+      .seq-symbol {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.18rem;
+        height: 1.35rem;
+        border-radius: 5px;
+        color: #ffffff;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.72rem;
+        font-weight: 850;
+      }
+      .seq-a { background: #1f9d8a; }
+      .seq-t, .seq-u { background: #ef476f; }
+      .seq-g { background: #f4a261; }
+      .seq-c { background: #3a86ff; }
+      .seq-stop { background: #111827; }
+      .seq-protein { background: #457b9d; }
+      .seq-other { background: #9aa0a6; }
+      .sequence-more {
+        color: #4b5563;
+        font-size: 0.84rem;
+        margin-top: 0.55rem;
+      }
       .readable-sequence {
         border: 1px solid #d8dee9;
         border-radius: 8px;
@@ -342,6 +408,8 @@ st.markdown(
         white-space: pre-wrap;
         overflow-wrap: anywhere;
         word-break: break-word;
+        overflow-x: auto;
+        max-width: 100%;
       }
       .stage-note {
         border-left: 4px solid #1f9d8a;
@@ -436,6 +504,58 @@ st.markdown(
         text-align: center;
         font-weight: 800;
       }
+      .stage-card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.65rem;
+        margin: 0.75rem 0 0.9rem;
+      }
+      .stage-card {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 0.8rem;
+        min-width: 0;
+      }
+      .stage-card-active {
+        border-color: #3a86ff;
+        box-shadow: inset 0 0 0 1px #3a86ff;
+      }
+      .stage-card-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.55rem;
+        height: 1.55rem;
+        border-radius: 999px;
+        background: #111827;
+        color: #ffffff;
+        font-size: 0.78rem;
+        font-weight: 850;
+        margin-bottom: 0.55rem;
+      }
+      .stage-card-title {
+        color: #111827;
+        font-weight: 850;
+        line-height: 1.2;
+      }
+      .stage-card-copy {
+        color: #4b5563;
+        font-size: 0.86rem;
+        line-height: 1.35;
+        margin-top: 0.35rem;
+      }
+      .stage-card-meta {
+        display: inline-flex;
+        border: 1px solid #d8dee9;
+        border-radius: 999px;
+        color: #111827;
+        background: #f9fafb;
+        padding: 0.22rem 0.5rem;
+        margin-top: 0.55rem;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
       .stTabs [data-baseweb="tab-list"] {
         gap: 0.25rem;
       }
@@ -476,8 +596,12 @@ st.markdown(
         .sequence-strip,
         .sequence-summary-grid,
         .detail-kv-grid,
-        .mini-flow {
+        .mini-flow,
+        .stage-card-grid {
           grid-template-columns: 1fr;
+        }
+        .sequence-preview-top {
+          display: block;
         }
         .beginner-card {
           padding: 0.85rem;
@@ -715,6 +839,66 @@ def sequence_summary_cards(summary: dict) -> str:
         )
     html.append("</div>")
     return "".join(html)
+
+
+def sequence_symbol_class(symbol: str, alphabet: str) -> str:
+    if symbol == "*":
+        return "seq-stop"
+    if alphabet == "protein":
+        return "seq-protein"
+    if symbol in {"A", "T", "U", "G", "C"}:
+        return f"seq-{symbol.lower()}"
+    return "seq-other"
+
+
+def sequence_blocks_html(sequence: str, alphabet: str, max_symbols: int = 240) -> str:
+    cleaned = clean_sequence(sequence).replace("T", "U") if alphabet == "rna" else clean_sequence(sequence)
+    if not cleaned:
+        return """
+        <div class="sequence-preview-panel">
+          <div class="sequence-preview-top">
+            <div class="sequence-preview-title">Sequence preview</div>
+            <div class="sequence-preview-count">No sequence returned</div>
+          </div>
+        </div>
+        """
+
+    shown = cleaned[:max_symbols]
+    symbols = "".join(
+        f'<span class="seq-symbol {sequence_symbol_class(symbol, alphabet)}">{escape_html(symbol)}</span>'
+        for symbol in shown
+    )
+    hidden = len(cleaned) - len(shown)
+    hidden_note = f'<div class="sequence-more">{hidden:,} more symbols hidden. Expand the full text below when you need it.</div>' if hidden > 0 else ""
+    return f"""
+    <div class="sequence-preview-panel">
+      <div class="sequence-preview-top">
+        <div class="sequence-preview-title">First {len(shown):,} symbols</div>
+        <div class="sequence-preview-count">{len(cleaned):,} total</div>
+      </div>
+      <div class="sequence-blocks">{symbols}</div>
+      {hidden_note}
+    </div>
+    """
+
+
+def stage_card_grid_html(stages: list[dict], selected_label: str) -> str:
+    cards = ['<div class="stage-card-grid">']
+    for index, stage in enumerate(stages, start=1):
+        active_class = " stage-card-active" if stage["label"] == selected_label else ""
+        length = len(clean_sequence(stage["sequence"]))
+        cards.append(
+            (
+                f'<div class="stage-card{active_class}">'
+                f'<div class="stage-card-number">{index}</div>'
+                f'<div class="stage-card-title">{escape_html(stage["label"])}</div>'
+                f'<div class="stage-card-copy">{escape_html(stage["short"])}</div>'
+                f'<div class="stage-card-meta">{length:,} {escape_html(stage["unit"])}</div>'
+                "</div>"
+            )
+        )
+    cards.append("</div>")
+    return "".join(cards)
 
 
 def chromosome_key(gene: dict) -> str:
@@ -963,13 +1147,15 @@ def transcript_rows(transcripts: list[dict], selected_id: str | None = None) -> 
     return rows
 
 
-def sequence_panel(label: str, sequence: str, alphabet: str, fasta_header: str, key_prefix: str) -> None:
+def sequence_panel(label: str, sequence: str, alphabet: str, fasta_header: str, key_prefix: str, preview_symbols: int = 240) -> None:
     summary = summarize_sequence(sequence, alphabet)
     st.markdown(sequence_summary_cards(summary), unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="readable-sequence">{escape_html(wrap_for_display(sequence))}</div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(sequence_blocks_html(sequence, alphabet, max_symbols=preview_symbols), unsafe_allow_html=True)
+    with st.expander(f"Show readable {label} text"):
+        st.markdown(
+            f'<div class="readable-sequence">{escape_html(wrap_for_display(sequence, max_symbols=preview_symbols * 2))}</div>',
+            unsafe_allow_html=True,
+        )
     with st.expander(f"Show more {label} text"):
         st.text_area(
             f"{label} sequence",
@@ -1013,47 +1199,58 @@ def central_dogma_map(data: dict) -> None:
     sequences = data["sequences"]
     selected = data.get("selected_transcript") or {}
     stages = [
-        (
-            "Genomic DNA",
-            "DNA at the gene locus, before transcript processing.",
-            sequences.get("genomic_dna", ""),
-            "dna",
-            f"{gene['display_name']}|genomic_dna",
-        ),
-        (
-            "Exons / Introns",
-            "Ensembl transcript models define exons. Introns are the genomic intervals removed during splicing.",
-            sequences.get("genomic_dna", ""),
-            "dna",
-            f"{gene['display_name']}|exon_intron_context",
-        ),
-        (
-            "Spliced mRNA",
-            "The transcript cDNA converted to RNA letters, representing the mature spliced transcript.",
-            to_mrna(sequences.get("transcript_cdna", "")),
-            "rna",
-            f"{gene['display_name']}|spliced_mrna",
-        ),
-        (
-            "Coding Sequence",
-            "The CDS is the part of the transcript read in codons to build the protein.",
-            sequences.get("coding_dna", ""),
-            "dna",
-            f"{gene['display_name']}|coding_sequence",
-        ),
-        (
-            "Amino Acid Chain",
-            "The amino acid sequence produced by translating the coding sequence.",
-            sequences.get("protein", ""),
-            "protein",
-            f"{gene['display_name']}|protein",
-        ),
+        {
+            "label": "Genomic DNA",
+            "short": "The gene's DNA at its chromosome locus.",
+            "detail": "DNA at the gene locus, before transcript processing.",
+            "sequence": sequences.get("genomic_dna", ""),
+            "alphabet": "dna",
+            "unit": "bp",
+            "fasta": f"{gene['display_name']}|genomic_dna",
+        },
+        {
+            "label": "Exons / Introns",
+            "short": "The transcript model decides what is kept.",
+            "detail": "Ensembl transcript models define exons. Introns are the genomic intervals removed during splicing.",
+            "sequence": sequences.get("genomic_dna", ""),
+            "alphabet": "dna",
+            "unit": "bp context",
+            "fasta": f"{gene['display_name']}|exon_intron_context",
+        },
+        {
+            "label": "Spliced mRNA",
+            "short": "The mature message after splicing.",
+            "detail": "The transcript cDNA converted to RNA letters, representing the mature spliced transcript.",
+            "sequence": to_mrna(sequences.get("transcript_cdna", "")),
+            "alphabet": "rna",
+            "unit": "nt",
+            "fasta": f"{gene['display_name']}|spliced_mrna",
+        },
+        {
+            "label": "Coding Sequence",
+            "short": "The part read three bases at a time.",
+            "detail": "The CDS is the part of the transcript read in codons to build the protein.",
+            "sequence": sequences.get("coding_dna", ""),
+            "alphabet": "dna",
+            "unit": "bases",
+            "fasta": f"{gene['display_name']}|coding_sequence",
+        },
+        {
+            "label": "Amino Acid Chain",
+            "short": "The translated protein sequence.",
+            "detail": "The amino acid sequence produced by translating the coding sequence.",
+            "sequence": sequences.get("protein", ""),
+            "alphabet": "protein",
+            "unit": "aa",
+            "fasta": f"{gene['display_name']}|protein",
+        },
     ]
-    labels = [stage[0] for stage in stages]
-    selected_stage = st.segmented_control("Central dogma stage", labels, default=labels[0])
+    labels = [stage["label"] for stage in stages]
+    selected_stage = st.segmented_control("Tap a central dogma step", labels, default=labels[0])
     stage = stages[labels.index(selected_stage or labels[0])]
-    st.markdown(f'<div class="stage-note">{escape_html(stage[1])}</div>', unsafe_allow_html=True)
-    if stage[0] == "Exons / Introns":
+    st.markdown(stage_card_grid_html(stages, stage["label"]), unsafe_allow_html=True)
+    st.markdown(f'<div class="stage-note">{escape_html(stage["detail"])}</div>', unsafe_allow_html=True)
+    if stage["label"] == "Exons / Introns":
         exons = selected.get("Exon") or selected.get("exons") or []
         if exons:
             st.dataframe(
@@ -1073,7 +1270,7 @@ def central_dogma_map(data: dict) -> None:
             )
         else:
             st.info("Exon coordinates were not included in this lookup response. The genomic sequence is shown as context.")
-    sequence_panel(stage[0], stage[2], stage[3], stage[4], f"dogma-map-{selected_stage}")
+    sequence_panel(stage["label"], stage["sequence"], stage["alphabet"], stage["fasta"], f"dogma-map-{selected_stage}")
 
 
 def mutation_effect_explanation(effect: str) -> str:
