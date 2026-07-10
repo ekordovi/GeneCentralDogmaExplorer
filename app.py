@@ -146,6 +146,7 @@ st.markdown(
       .quick-fact,
       .web-hero,
       .story-card,
+      .lesson-card,
       .sequence-chip,
       .sequence-summary-card,
       .readable-sequence,
@@ -256,6 +257,49 @@ st.markdown(
         color: #4b5563;
         font-size: 0.92rem;
         line-height: 1.4;
+      }
+      .lesson-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin: 0.85rem 0;
+      }
+      .lesson-card {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 0.9rem;
+        min-width: 0;
+      }
+      .lesson-card-title {
+        color: #111827;
+        font-size: 1rem;
+        font-weight: 850;
+        margin-bottom: 0.35rem;
+      }
+      .lesson-card-edit {
+        display: inline-flex;
+        border-radius: 999px;
+        border: 1px solid #d8dee9;
+        background: #f9fafb;
+        color: #111827;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.82rem;
+        font-weight: 850;
+        padding: 0.25rem 0.55rem;
+        margin-bottom: 0.45rem;
+      }
+      .lesson-card-copy {
+        color: #4b5563;
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+      .lesson-card-kv {
+        color: #111827;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.82rem;
+        margin-top: 0.55rem;
+        overflow-wrap: anywhere;
       }
       .sequence-strip {
         display: grid;
@@ -593,6 +637,7 @@ st.markdown(
           font-size: 1.85rem;
         }
         .story-grid,
+        .lesson-grid,
         .sequence-strip,
         .sequence-summary-grid,
         .detail-kv-grid,
@@ -1312,6 +1357,30 @@ def example_substitution_change(coding_dna: str, preferred_position: int = 20) -
     return f"{position} {reference}>{alternate_base(reference)}"
 
 
+def example_missense_change(coding_dna: str) -> str:
+    cleaned = clean_sequence(coding_dna).replace("U", "T")
+    preferred = example_substitution_change(cleaned)
+    if preferred:
+        try:
+            result = simulate_dna_mutation(cleaned, preferred)
+            if result["effect"] == "missense":
+                return preferred
+        except ValueError:
+            pass
+    for position, reference in enumerate(cleaned, start=1):
+        for alternate in "ACGT":
+            if alternate == reference:
+                continue
+            change = f"{position} {reference}>{alternate}"
+            try:
+                result = simulate_dna_mutation(cleaned, change)
+            except ValueError:
+                continue
+            if result["effect"] == "missense":
+                return change
+    return example_substitution_change(coding_dna)
+
+
 def example_deletion_change(coding_dna: str, preferred_position: int = 20) -> str:
     cleaned = clean_sequence(coding_dna).replace("U", "T")
     if not cleaned:
@@ -1337,9 +1406,72 @@ def example_nonsense_change(coding_dna: str) -> str:
     return ""
 
 
+def mutation_lesson_rows(coding_dna: str) -> list[dict]:
+    examples = [
+        (
+            "Missense",
+            example_missense_change(coding_dna),
+            "A DNA edit changes one codon so the protein gets a different amino acid.",
+        ),
+        (
+            "Nonsense",
+            example_nonsense_change(coding_dna),
+            "A DNA edit creates an early stop signal, which can shorten the protein.",
+        ),
+        (
+            "Frameshift",
+            example_deletion_change(coding_dna),
+            "A one-base deletion shifts the reading frame, changing downstream codons.",
+        ),
+    ]
+    rows = []
+    for title, change, explanation in examples:
+        if not change:
+            continue
+        try:
+            result = simulate_dna_mutation(coding_dna, change)
+        except ValueError:
+            continue
+        rows.append(
+            {
+                "title": title,
+                "change": change,
+                "effect": result["effect"],
+                "codon": f"{result['original_codon'] or 'NA'} -> {result['mutated_codon'] or 'NA'}",
+                "amino_acid": f"{result['original_amino_acid'] or 'NA'} -> {result['mutated_amino_acid'] or 'NA'}",
+                "explanation": explanation,
+            }
+        )
+    return rows
+
+
+def render_mutation_lesson(sequences: dict) -> None:
+    rows = mutation_lesson_rows(sequences.get("coding_dna", ""))
+    if not rows:
+        st.warning("No coding DNA returned, so the two-minute mutation lesson is unavailable for this transcript.")
+        return
+    cards = ['<div class="lesson-grid">']
+    for row in rows:
+        cards.append(
+            (
+                '<div class="lesson-card">'
+                f'<div class="lesson-card-title">{escape_html(row["title"])}</div>'
+                f'<div class="lesson-card-edit">{escape_html(row["change"])}</div>'
+                f'<div class="lesson-card-copy">{escape_html(row["explanation"])}</div>'
+                f'<div class="lesson-card-kv">Effect: {escape_html(row["effect"])}</div>'
+                f'<div class="lesson-card-kv">Codon: {escape_html(row["codon"])}</div>'
+                f'<div class="lesson-card-kv">AA: {escape_html(row["amino_acid"])}</div>'
+                "</div>"
+            )
+        )
+    cards.append("</div>")
+    st.markdown("".join(cards), unsafe_allow_html=True)
+    st.caption("Use this as a fast teaching script: missense changes meaning, nonsense creates stop, frameshift changes the reading frame.")
+
+
 def mutation_simulator(sequences: dict, key_prefix: str = "mutation") -> None:
     coding_dna = sequences.get("coding_dna", "")
-    default_change = example_substitution_change(coding_dna)
+    default_change = example_missense_change(coding_dna)
     nonsense_change = example_nonsense_change(coding_dna)
     deletion_change = example_deletion_change(coding_dna)
     example_text = ", ".join(change for change in [default_change, nonsense_change, deletion_change] if change)
@@ -1931,6 +2063,11 @@ if data:
 
     with study_tab:
         st.subheader("Study mode")
+        st.markdown(
+            '<div class="mode-note">Two-minute mutation lesson: compare a missense change, a nonsense stop, and a frameshift before you quiz yourself.</div>',
+            unsafe_allow_html=True,
+        )
+        render_mutation_lesson(sequences)
         render_study_section(data)
         st.subheader("Saved genes")
         render_saved_genes_section()

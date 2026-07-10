@@ -119,6 +119,7 @@ To verify the core v1 learning loop without network access:
 
 ```bash
 python scripts/verify_v1.py
+python scripts/verify_streamlit_ui.py
 python scripts/verify_app_store_metadata.py
 python scripts/verify_ios_config.py
 ```
