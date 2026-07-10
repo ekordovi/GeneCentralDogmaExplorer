@@ -97,6 +97,16 @@ After deployment, verify the hosted API:
 python scripts/verify_v1.py --base-url https://your-api-host.example --live-lookup
 ```
 
+Before TestFlight or App Store upload, replace the Release API URL placeholder
+in the Xcode project and run the strict release gate:
+
+```bash
+python scripts/verify_release_ready.py --live-lookup
+```
+
+This command intentionally fails while the Release build setting still points
+to `https://your-api-host.example`.
+
 ## Privacy-Safe Error Logging
 
 Version 1 does not need analytics. If crash/error logging is added later, do not

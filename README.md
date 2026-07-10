@@ -129,6 +129,13 @@ To verify a deployed API after hosting:
 python scripts/verify_v1.py --base-url https://your-api-host.example --live-lookup
 ```
 
+Before TestFlight or App Store upload, run the strict release gate after the
+Release API URL points to the hosted backend:
+
+```bash
+python scripts/verify_release_ready.py --live-lookup
+```
+
 ## Data Source
 
 Live lookups use Ensembl REST endpoints:

@@ -65,6 +65,9 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   - Text wraps cleanly on small iPhones.
 - Run `python scripts/verify_v1.py` before every demo.
 - Run `python scripts/verify_ios_config.py` before TestFlight upload.
+- After replacing the Release API URL placeholder, run
+  `python scripts/verify_release_ready.py --live-lookup` before TestFlight or
+  App Store upload.
 
 ## Screenshot Plan
 
