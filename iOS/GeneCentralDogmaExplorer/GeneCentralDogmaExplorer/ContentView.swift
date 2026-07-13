@@ -613,10 +613,14 @@ struct DogmaStep: View {
             Text(detail)
                 .foregroundStyle(.secondary)
             if !sequence.isEmpty {
-                Text(sequence)
-                    .font(.system(.caption, design: .monospaced))
-                    .lineLimit(3)
-                    .textSelection(.enabled)
+                Text(sequenceSummaryText(sequence))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                DisclosureGroup("Show sequence preview") {
+                    Text(sequencePreviewText(sequence, limit: 240))
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                }
             }
         }
     }
@@ -687,12 +691,37 @@ struct SequencePreview: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.headline)
-            Text(sequence.isEmpty ? "No sequence returned." : sequence)
-                .font(.system(.caption, design: .monospaced))
-                .lineLimit(8)
-                .textSelection(.enabled)
+            Text(sequenceSummaryText(sequence))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            DisclosureGroup("Show \(title) letters") {
+                Text(sequencePreviewText(sequence, limit: 480))
+                    .font(.system(.caption, design: .monospaced))
+                    .textSelection(.enabled)
+            }
         }
     }
+}
+
+func cleanDisplaySequence(_ sequence: String) -> String {
+    sequence.uppercased().filter { $0.isLetter || $0 == "*" }
+}
+
+func sequenceSummaryText(_ sequence: String) -> String {
+    let cleaned = cleanDisplaySequence(sequence)
+    guard !cleaned.isEmpty else { return "No sequence returned." }
+    let unit = cleaned.allSatisfy { "ACGTUN".contains($0) } ? "letters" : "amino acids"
+    let start = String(cleaned.prefix(10))
+    let end = String(cleaned.suffix(10))
+    return "\(cleaned.count) \(unit) · starts \(start) · ends \(end)"
+}
+
+func sequencePreviewText(_ sequence: String, limit: Int) -> String {
+    let cleaned = cleanDisplaySequence(sequence)
+    guard !cleaned.isEmpty else { return "No sequence returned." }
+    guard cleaned.count > limit else { return cleaned }
+    let shown = String(cleaned.prefix(limit))
+    return "\(shown)\n...\n\(cleaned.count - limit) more symbols hidden"
 }
 
 func whyGeneMatters(_ response: GeneDogmaResponse) -> String {

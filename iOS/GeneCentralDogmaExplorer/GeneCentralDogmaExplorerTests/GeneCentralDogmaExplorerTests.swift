@@ -73,6 +73,15 @@ final class GeneCentralDogmaExplorerTests: XCTestCase {
         XCTAssertTrue(report.contains("This report is educational and is not medical advice."))
     }
 
+    func testSequenceDisplaySummariesKeepRawLettersOptIn() throws {
+        let summary = sequenceSummaryText("ATGGAGTAA")
+        let preview = sequencePreviewText("ATGGAGTAA", limit: 6)
+
+        XCTAssertEqual(summary, "9 letters · starts ATGGAGTAA · ends ATGGAGTAA")
+        XCTAssertEqual(preview, "ATGGAG\n...\n3 more symbols hidden")
+        XCTAssertEqual(sequencePreviewText("", limit: 6), "No sequence returned.")
+    }
+
     func testLocalMutationSimulationMatchesTeachingExamples() throws {
         let response = try LocalExampleStore.loadHBBExample(bundle: Bundle(for: GeneDogmaViewModel.self))
         let missense = try simulateLocalMutation(codingDNA: response.sequences.codingDna, change: "20 A>T")

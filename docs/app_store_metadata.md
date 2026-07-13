@@ -44,6 +44,7 @@ Version 1 focuses on education:
 - Shareable gene story reports
 - Saved genes, quiz mode, and a two-minute teacher guide
 - Beginner-friendly explanations with advanced details available when needed
+- Sequence summaries first, with raw letters revealed only when the learner asks
 
 This app is for education only. It is not medical advice, diagnosis, treatment
 guidance, or clinical variant interpretation.

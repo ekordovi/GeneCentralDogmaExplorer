@@ -48,6 +48,8 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 - Confirm the app is not a plain WebView.
 - Confirm the educational disclaimer appears in the About tab.
 - Confirm the privacy text matches `docs/privacy_policy.md`.
+- Confirm raw DNA/RNA/protein letters are behind disclosure controls and the
+  first view shows summaries instead of large sequence blocks.
 - Host the static `docs/support.html` and `docs/privacy.html` pages on a public
   support site, such as GitHub Pages from the `/docs` folder. Current URLs:
   - Support: `https://ekordovi.github.io/GeneCentralDogmaExplorer/support.html`
