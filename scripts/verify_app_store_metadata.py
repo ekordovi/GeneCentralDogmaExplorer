@@ -47,6 +47,7 @@ def main() -> int:
     forbidden = ["diagnose", "diagnosis", "treatment guidance", "clinical variant interpretation"]
     require("not medical advice" in description, "description.txt must include the medical disclaimer.")
     require("education only" in description, "description.txt must clearly frame the app as educational.")
+    require("teacher guide" in description, "description.txt must mention the teacher guide.")
     for phrase in forbidden:
         if phrase in {"diagnosis", "treatment guidance", "clinical variant interpretation"}:
             continue

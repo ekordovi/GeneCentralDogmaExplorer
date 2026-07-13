@@ -147,6 +147,7 @@ st.markdown(
       .web-hero,
       .story-card,
       .lesson-card,
+      .teacher-card,
       .sequence-chip,
       .sequence-summary-card,
       .readable-sequence,
@@ -300,6 +301,36 @@ st.markdown(
         font-size: 0.82rem;
         margin-top: 0.55rem;
         overflow-wrap: anywhere;
+      }
+      .teacher-guide-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin: 0.85rem 0;
+      }
+      .teacher-card {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 0.9rem;
+        min-width: 0;
+      }
+      .teacher-card-kicker {
+        color: #3a86ff;
+        font-size: 0.75rem;
+        font-weight: 850;
+        text-transform: uppercase;
+        margin-bottom: 0.25rem;
+      }
+      .teacher-card-title {
+        color: #111827;
+        font-weight: 850;
+        margin-bottom: 0.35rem;
+      }
+      .teacher-card-copy {
+        color: #4b5563;
+        font-size: 0.9rem;
+        line-height: 1.4;
       }
       .sequence-strip {
         display: grid;
@@ -638,6 +669,7 @@ st.markdown(
         }
         .story-grid,
         .lesson-grid,
+        .teacher-guide-grid,
         .sequence-strip,
         .sequence-summary-grid,
         .detail-kv-grid,
@@ -1469,6 +1501,48 @@ def render_mutation_lesson(sequences: dict) -> None:
     st.caption("Use this as a fast teaching script: missense changes meaning, nonsense creates stop, frameshift changes the reading frame.")
 
 
+def teacher_lesson_steps(data: dict) -> list[dict[str, str]]:
+    gene = data["gene"]
+    name = gene.get("display_name", "this gene")
+    return [
+        {
+            "kicker": "0-30 sec",
+            "title": "Hook",
+            "copy": f"Ask: how can one DNA letter in {name} change a protein enough for biology to notice?",
+        },
+        {
+            "kicker": "30-90 sec",
+            "title": "Trace the path",
+            "copy": "Open the dogma path: DNA is stored, RNA is copied and processed, codons are read, protein is built.",
+        },
+        {
+            "kicker": "90-120 sec",
+            "title": "Compare edits",
+            "copy": "Run missense versus nonsense. Have students explain why one swaps an amino acid while the other creates a stop.",
+        },
+    ]
+
+
+def render_teacher_guide(data: dict) -> None:
+    cards = ['<div class="teacher-guide-grid">']
+    for step in teacher_lesson_steps(data):
+        cards.append(
+            (
+                '<div class="teacher-card">'
+                f'<div class="teacher-card-kicker">{escape_html(step["kicker"])}</div>'
+                f'<div class="teacher-card-title">{escape_html(step["title"])}</div>'
+                f'<div class="teacher-card-copy">{escape_html(step["copy"])}</div>'
+                "</div>"
+            )
+        )
+    cards.append("</div>")
+    st.markdown("".join(cards), unsafe_allow_html=True)
+    with st.expander("Teacher prompts and exit ticket"):
+        st.write("- Discussion prompt: Which step changes during transcription, splicing, translation, and mutation?")
+        st.write("- Partner prompt: Compare a missense and nonsense result using the codon and amino-acid rows.")
+        st.write("- Exit ticket: In one sentence, explain why not every DNA change has the same protein effect.")
+
+
 def mutation_simulator(sequences: dict, key_prefix: str = "mutation") -> None:
     coding_dna = sequences.get("coding_dna", "")
     default_change = example_missense_change(coding_dna)
@@ -2063,6 +2137,11 @@ if data:
 
     with study_tab:
         st.subheader("Study mode")
+        st.markdown(
+            '<div class="mode-note">Teacher guide: a ready two-minute classroom flow for HBB or any loaded gene.</div>',
+            unsafe_allow_html=True,
+        )
+        render_teacher_guide(data)
         st.markdown(
             '<div class="mode-note">Two-minute mutation lesson: compare a missense change, a nonsense stop, and a frameshift before you quiz yourself.</div>',
             unsafe_allow_html=True,

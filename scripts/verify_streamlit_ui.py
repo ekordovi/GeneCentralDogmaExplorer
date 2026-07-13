@@ -26,6 +26,8 @@ REQUIRED_COPY = (
     "Tap a gene card to inspect it",
     "Tap a central dogma step",
     "Chromosome location",
+    "Teacher guide",
+    "Exit ticket",
     "Two-minute mutation lesson",
     "Missense",
     "Nonsense",

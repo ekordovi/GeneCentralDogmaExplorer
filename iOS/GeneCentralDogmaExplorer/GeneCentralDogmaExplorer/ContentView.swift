@@ -423,6 +423,16 @@ struct StudyQuizScreen: View {
                         Text("Quiz questions update around the loaded gene, so famous examples and saved genes become repeatable practice.")
                             .foregroundStyle(.secondary)
                     }
+                    Section("Teacher guide") {
+                        Text("A ready two-minute classroom flow for HBB or any loaded gene.")
+                            .foregroundStyle(.secondary)
+                        ForEach(teacherLessonSteps(response: response)) { step in
+                            TeacherLessonStepCard(step: step)
+                        }
+                        Text("Exit ticket: In one sentence, explain why not every DNA change has the same protein effect.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
                     Section("Two-minute mutation lesson") {
                         Text("Compare a missense change, a nonsense stop, and a frameshift before you quiz yourself.")
                             .foregroundStyle(.secondary)
@@ -456,6 +466,24 @@ struct StudyQuizScreen: View {
             }
             .navigationTitle("Quiz")
         }
+    }
+}
+
+struct TeacherLessonStepCard: View {
+    var step: TeacherLessonStep
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(step.timing)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.blue)
+            Text(step.title)
+                .font(.headline)
+            Text(step.prompt)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
     }
 }
 
@@ -732,6 +760,13 @@ struct StudyQuestion: Identifiable {
     var explanation: String
 }
 
+struct TeacherLessonStep: Identifiable, Equatable {
+    var id: String { "\(timing)-\(title)" }
+    var timing: String
+    var title: String
+    var prompt: String
+}
+
 struct MutationLessonExample: Identifiable, Equatable {
     var id: String { "\(title)-\(change)" }
     var title: String
@@ -740,6 +775,27 @@ struct MutationLessonExample: Identifiable, Equatable {
     var codonChange: String
     var aminoAcidChange: String
     var explanation: String
+}
+
+func teacherLessonSteps(response: GeneDogmaResponse) -> [TeacherLessonStep] {
+    let name = response.gene.displayName
+    return [
+        TeacherLessonStep(
+            timing: "0-30 sec",
+            title: "Hook",
+            prompt: "Ask: how can one DNA letter in \(name) change a protein enough for biology to notice?"
+        ),
+        TeacherLessonStep(
+            timing: "30-90 sec",
+            title: "Trace the path",
+            prompt: "Open the dogma path: DNA is stored, RNA is copied and processed, codons are read, protein is built."
+        ),
+        TeacherLessonStep(
+            timing: "90-120 sec",
+            title: "Compare edits",
+            prompt: "Run missense versus nonsense. Have students explain why one swaps an amino acid while the other creates a stop."
+        ),
+    ]
 }
 
 func mutationLessonExamples(codingDNA: String) -> [MutationLessonExample] {

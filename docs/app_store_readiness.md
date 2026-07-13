@@ -107,10 +107,10 @@ This app is for education only and is not medical advice.
 ## Version Updates
 
 - `1.0`: HBB offline demo, live lookup, central-dogma path, simple mutation
-  simulator, compare-two-mutations, saved genes, study mode, privacy/support
-  docs, and AppIcon.
-- `1.1`: Better teacher mode, curated examples, and additional screenshot-ready
-  polish after TestFlight feedback.
+  simulator, compare-two-mutations, saved genes, study mode, two-minute teacher
+  guide, privacy/support docs, and AppIcon.
+- `1.1`: More curated examples, better classroom handouts, and additional
+  screenshot-ready polish after TestFlight feedback.
 - Later: only add clinical or variant database integrations if the app wording,
   privacy policy, and review notes stay clear that this is educational, not
   medical decision support.

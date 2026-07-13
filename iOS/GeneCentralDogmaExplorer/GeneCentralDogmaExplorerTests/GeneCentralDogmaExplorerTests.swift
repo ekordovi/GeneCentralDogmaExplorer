@@ -54,6 +54,16 @@ final class GeneCentralDogmaExplorerTests: XCTestCase {
         XCTAssertEqual(examples[1].aminoAcidChange, "E -> *")
     }
 
+    func testTeacherLessonStepsAreClassroomReady() throws {
+        let response = try LocalExampleStore.loadHBBExample(bundle: Bundle(for: GeneDogmaViewModel.self))
+        let steps = teacherLessonSteps(response: response)
+
+        XCTAssertEqual(steps.map(\.title), ["Hook", "Trace the path", "Compare edits"])
+        XCTAssertTrue(steps[0].prompt.contains("HBB"))
+        XCTAssertTrue(steps[1].prompt.contains("DNA is stored"))
+        XCTAssertTrue(steps[2].prompt.contains("missense versus nonsense"))
+    }
+
     func testLocalMutationSimulationMatchesTeachingExamples() throws {
         let response = try LocalExampleStore.loadHBBExample(bundle: Bundle(for: GeneDogmaViewModel.self))
         let missense = try simulateLocalMutation(codingDNA: response.sequences.codingDna, change: "20 A>T")

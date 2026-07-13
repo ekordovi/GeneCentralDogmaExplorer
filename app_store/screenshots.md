@@ -22,8 +22,8 @@ is configured.
    - Caption: Explore familiar genes with trusted public data.
    - Capture after the production API URL is configured and live lookup is verified.
 5. Study and Save
-   - Show quiz/study or saved genes.
-   - Caption: Save genes and review the story.
+   - Show the teacher guide, quiz/study, or saved genes.
+   - Caption: Save genes and turn the story into a lesson.
    - Launch arguments: `--gene-demo-tab=study --gene-demo-saved`
 
 ## Simulator Launch Arguments

@@ -31,7 +31,7 @@ effects.
 Start with the offline HBB example, then try live lookup for genes such as
 BRCA1 and TP53. Follow the central dogma from DNA to RNA to protein, inspect
 clear gene cards, compare two simple coding-DNA mutations, save genes for later,
-and use study prompts to review the core idea.
+and use teacher-ready study prompts to review the core idea.
 
 Version 1 focuses on education:
 
@@ -41,7 +41,7 @@ Version 1 focuses on education:
 - Simple mutation simulator for missense, nonsense, silent, and frameshift
   teaching examples
 - Compare-two-mutations workflow
-- Saved genes and quiz/study mode
+- Saved genes, quiz mode, and a two-minute teacher guide
 - Beginner-friendly explanations with advanced details available when needed
 
 This app is for education only. It is not medical advice, diagnosis, treatment
@@ -51,7 +51,8 @@ guidance, or clinical variant interpretation.
 
 Version 1.0 includes the offline HBB demo, live gene lookup, central-dogma path,
 simple mutation simulation, compare-two-mutations, saved genes, study mode,
-public support/privacy pages, and a privacy-first educational disclaimer.
+teacher guide, public support/privacy pages, and a privacy-first educational
+disclaimer.
 
 ## Screenshot Captions
 
@@ -65,7 +66,7 @@ public support/privacy pages, and a privacy-first educational disclaimer.
 4. Try Live Gene Lookup
    Explore familiar genes such as BRCA1 and TP53 using Ensembl-backed data.
 5. Study and Save
-   Save genes and use quiz prompts to turn the app into a teaching tool.
+   Save genes and use teacher-ready prompts to turn the app into a lesson tool.
 
 ## App Review Notes
 
