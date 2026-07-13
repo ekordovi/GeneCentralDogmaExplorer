@@ -219,7 +219,7 @@ final class GeneDogmaViewModel: ObservableObject {
 
     private func applyMutationExamples() {
         guard let codingDNA = response?.sequences.codingDna, !codingDNA.isEmpty else { return }
-        let substitution = exampleSubstitutionChange(codingDNA)
+        let substitution = exampleMissenseChange(codingDNA)
         let nonsense = exampleNonsenseChange(codingDNA)
         let deletion = exampleDeletionChange(codingDNA)
         mutationText = substitution
@@ -277,6 +277,25 @@ func exampleSubstitutionChange(_ codingDNA: String, preferredPosition: Int = 20)
     return "\(position) \(reference)>\(alternateBase(reference))"
 }
 
+func exampleMissenseChange(_ codingDNA: String) -> String {
+    let cleaned = cleanDNA(codingDNA)
+    let preferred = exampleSubstitutionChange(cleaned)
+    if mutationEffectForSubstitution(cleaned, change: preferred) == "missense" {
+        return preferred
+    }
+    guard !cleaned.isEmpty else { return "" }
+    for position in 1...cleaned.count {
+        let reference = characterAt(cleaned, oneBasedPosition: position)
+        for alternate in ["A", "C", "G", "T"] where alternate != reference {
+            let change = "\(position) \(reference)>\(alternate)"
+            if mutationEffectForSubstitution(cleaned, change: change) == "missense" {
+                return change
+            }
+        }
+    }
+    return exampleSubstitutionChange(codingDNA)
+}
+
 func exampleDeletionChange(_ codingDNA: String, preferredPosition: Int = 20) -> String {
     let cleaned = cleanDNA(codingDNA)
     guard !cleaned.isEmpty else { return "" }
@@ -327,4 +346,96 @@ func alternateBase(_ base: String) -> String {
         return candidate
     }
     return "A"
+}
+
+enum LocalMutationKind: Equatable {
+    case substitution(alternate: String)
+    case deletion
+}
+
+struct ParsedMutationChange: Equatable {
+    var position: Int
+    var kind: LocalMutationKind
+}
+
+func parseSimpleMutationChange(_ change: String, codingDNA: String) -> ParsedMutationChange? {
+    let trimmed = change.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+    if trimmed.hasSuffix("DEL") {
+        let positionText = trimmed.dropLast(3)
+        guard let position = Int(positionText), position >= 1, position <= codingDNA.count else { return nil }
+        return ParsedMutationChange(position: position, kind: .deletion)
+    }
+
+    let parts = trimmed.split(separator: " ")
+    guard parts.count == 2, let position = Int(parts[0]), position >= 1, position <= codingDNA.count else { return nil }
+    let baseChange = parts[1].split(separator: ">")
+    guard baseChange.count == 2 else { return nil }
+    let reference = String(baseChange[0])
+    let alternate = String(baseChange[1])
+    guard characterAt(codingDNA, oneBasedPosition: position) == reference else { return nil }
+    return ParsedMutationChange(position: position, kind: .substitution(alternate: alternate))
+}
+
+func mutationEffectForSubstitution(_ codingDNA: String, change: String) -> String? {
+    guard let parsed = parseSimpleMutationChange(change, codingDNA: codingDNA),
+          case .substitution(let alternate) = parsed.kind else { return nil }
+    let originalCodonStart = ((parsed.position - 1) / 3) * 3
+    guard originalCodonStart + 3 <= codingDNA.count else { return nil }
+    let originalCodon = substring(codingDNA, zeroBasedStart: originalCodonStart, length: 3)
+    let mutatedDNA = replacingCharacter(codingDNA, oneBasedPosition: parsed.position, with: alternate)
+    let mutatedCodon = substring(mutatedDNA, zeroBasedStart: originalCodonStart, length: 3)
+    let originalAA = translateCodon(originalCodon)
+    let mutatedAA = translateCodon(mutatedCodon)
+    if mutatedAA == "*" {
+        return "nonsense"
+    }
+    return originalAA == mutatedAA ? "silent" : "missense"
+}
+
+func substring(_ sequence: String, zeroBasedStart: Int, length: Int) -> String {
+    guard zeroBasedStart >= 0, length > 0, zeroBasedStart + length <= sequence.count else { return "NA" }
+    let start = sequence.index(sequence.startIndex, offsetBy: zeroBasedStart)
+    let end = sequence.index(start, offsetBy: length)
+    return String(sequence[start..<end])
+}
+
+func replacingCharacter(_ sequence: String, oneBasedPosition: Int, with replacement: String) -> String {
+    var characters = Array(sequence)
+    guard oneBasedPosition >= 1, oneBasedPosition <= characters.count, let first = replacement.first else { return sequence }
+    characters[oneBasedPosition - 1] = first
+    return String(characters)
+}
+
+func deletingCharacter(_ sequence: String, oneBasedPosition: Int) -> String {
+    var characters = Array(sequence)
+    guard oneBasedPosition >= 1, oneBasedPosition <= characters.count else { return sequence }
+    characters.remove(at: oneBasedPosition - 1)
+    return String(characters)
+}
+
+func translateCodon(_ codon: String) -> String {
+    switch codon {
+    case "TTT", "TTC": return "F"
+    case "TTA", "TTG", "CTT", "CTC", "CTA", "CTG": return "L"
+    case "ATT", "ATC", "ATA": return "I"
+    case "ATG": return "M"
+    case "GTT", "GTC", "GTA", "GTG": return "V"
+    case "TCT", "TCC", "TCA", "TCG", "AGT", "AGC": return "S"
+    case "CCT", "CCC", "CCA", "CCG": return "P"
+    case "ACT", "ACC", "ACA", "ACG": return "T"
+    case "GCT", "GCC", "GCA", "GCG": return "A"
+    case "TAT", "TAC": return "Y"
+    case "TAA", "TAG", "TGA": return "*"
+    case "CAT", "CAC": return "H"
+    case "CAA", "CAG": return "Q"
+    case "AAT", "AAC": return "N"
+    case "AAA", "AAG": return "K"
+    case "GAT", "GAC": return "D"
+    case "GAA", "GAG": return "E"
+    case "TGT", "TGC": return "C"
+    case "TGG": return "W"
+    case "CGT", "CGC", "CGA", "CGG", "AGA", "AGG": return "R"
+    case "GGT", "GGC", "GGA", "GGG": return "G"
+    default: return "NA"
+    }
 }

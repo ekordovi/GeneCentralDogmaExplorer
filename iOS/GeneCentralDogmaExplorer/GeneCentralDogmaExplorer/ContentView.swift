@@ -411,6 +411,19 @@ struct StudyQuizScreen: View {
                         Text("Quiz questions update around the loaded gene, so famous examples and saved genes become repeatable practice.")
                             .foregroundStyle(.secondary)
                     }
+                    Section("Two-minute mutation lesson") {
+                        Text("Compare a missense change, a nonsense stop, and a frameshift before you quiz yourself.")
+                            .foregroundStyle(.secondary)
+                        let lessonExamples = mutationLessonExamples(codingDNA: response.sequences.codingDna)
+                        if lessonExamples.isEmpty {
+                            Text("No coding DNA returned, so the mutation lesson is unavailable for this transcript.")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(lessonExamples) { example in
+                                MutationLessonCard(example: example)
+                            }
+                        }
+                    }
                     ForEach(questions) { question in
                         Section(question.prompt) {
                             ForEach(question.choices, id: \.self) { choice in
@@ -431,6 +444,33 @@ struct StudyQuizScreen: View {
             }
             .navigationTitle("Quiz")
         }
+    }
+}
+
+struct MutationLessonCard: View {
+    var example: MutationLessonExample
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(example.title)
+                    .font(.headline)
+                Spacer()
+                Text(example.change)
+                    .font(.system(.caption, design: .monospaced).bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.thinMaterial)
+                    .clipShape(Capsule())
+            }
+            Text(example.explanation)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            LabeledContent("Effect", value: example.effect)
+            LabeledContent("Codon", value: example.codonChange)
+            LabeledContent("Amino acid", value: example.aminoAcidChange)
+        }
+        .padding(.vertical, 4)
     }
 }
 
@@ -678,6 +718,75 @@ struct StudyQuestion: Identifiable {
     var choices: [String]
     var answer: String
     var explanation: String
+}
+
+struct MutationLessonExample: Identifiable, Equatable {
+    var id: String { "\(title)-\(change)" }
+    var title: String
+    var change: String
+    var effect: String
+    var codonChange: String
+    var aminoAcidChange: String
+    var explanation: String
+}
+
+func mutationLessonExamples(codingDNA: String) -> [MutationLessonExample] {
+    let examples = [
+        (
+            title: "Missense",
+            change: exampleMissenseChange(codingDNA),
+            effect: "missense",
+            explanation: "A DNA edit changes one codon so the protein gets a different amino acid."
+        ),
+        (
+            title: "Nonsense",
+            change: exampleNonsenseChange(codingDNA),
+            effect: "nonsense",
+            explanation: "A DNA edit creates an early stop signal, which can shorten the protein."
+        ),
+        (
+            title: "Frameshift",
+            change: exampleDeletionChange(codingDNA),
+            effect: "frameshift",
+            explanation: "A one-base deletion shifts the reading frame, changing downstream codons."
+        ),
+    ]
+    return examples.compactMap { example in
+        mutationLessonExample(
+            codingDNA: codingDNA,
+            title: example.title,
+            change: example.change,
+            effect: example.effect,
+            explanation: example.explanation
+        )
+    }
+}
+
+func mutationLessonExample(codingDNA: String, title: String, change: String, effect: String, explanation: String) -> MutationLessonExample? {
+    guard !change.isEmpty else { return nil }
+    let cleaned = cleanDNA(codingDNA)
+    guard let parsed = parseSimpleMutationChange(change, codingDNA: cleaned) else { return nil }
+    let originalCodonStart = ((parsed.position - 1) / 3) * 3
+    guard originalCodonStart + 3 <= cleaned.count else { return nil }
+    let originalCodon = substring(cleaned, zeroBasedStart: originalCodonStart, length: 3)
+    let mutatedDNA: String
+
+    switch parsed.kind {
+    case .substitution(let alternate):
+        mutatedDNA = replacingCharacter(cleaned, oneBasedPosition: parsed.position, with: alternate)
+    case .deletion:
+        mutatedDNA = deletingCharacter(cleaned, oneBasedPosition: parsed.position)
+    }
+
+    let mutatedCodon = originalCodonStart + 3 <= mutatedDNA.count ? substring(mutatedDNA, zeroBasedStart: originalCodonStart, length: 3) : "NA"
+    return MutationLessonExample(
+        title: title,
+        change: change,
+        effect: effect,
+        codonChange: "\(originalCodon) -> \(mutatedCodon)",
+        aminoAcidChange: "\(translateCodon(originalCodon)) -> \(translateCodon(mutatedCodon))",
+        explanation: explanation
+    )
 }
 
 func quizQuestions(response: GeneDogmaResponse) -> [StudyQuestion] {
