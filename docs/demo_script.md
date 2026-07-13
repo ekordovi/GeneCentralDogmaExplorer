@@ -26,7 +26,7 @@ with a plain-English explanation.
 
 5. Show study mode.
    Say: "This is not just a lookup tool. It includes a two-minute teacher guide,
-   quiz prompts, saved genes, and shareable reports."
+   quiz prompts, saved genes, a downloadable study pack, and shareable reports."
 
 ## What To Show
 
@@ -36,6 +36,7 @@ with a plain-English explanation.
   protein product without overwhelming raw sequence blocks.
 - Mutation comparison: show missense versus nonsense side by side.
 - Study mode: show the teacher guide and exit ticket.
+- Saved genes: show the Markdown study pack export for student review.
 - About/support: show the educational disclaimer, Ensembl REST attribution, and
   privacy posture.
 

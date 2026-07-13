@@ -79,6 +79,10 @@ def main() -> int:
             'st.session_state.get("learning_mode") == "Advanced"' in app_source,
             "Technical exception details should stay behind Advanced mode.",
         )
+        require(
+            "Download Study Pack" in app_source and "saved_gene_study_pack.md" in app_source,
+            "Streamlit saved genes must have a learner-friendly study-pack export.",
+        )
 
         app = AppTest.from_file(str(PROJECT_ROOT / "app.py"))
         app.run(timeout=30)

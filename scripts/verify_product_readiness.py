@@ -90,6 +90,16 @@ def verify_learning_loop(app: str, ios: str) -> None:
         ],
         "iOS mobile learning loop",
     )
+    require_all(
+        app,
+        [
+            "saved_gene_study_pack",
+            "Download Study Pack",
+            "Review prompts",
+            "saved_gene_study_pack.md",
+        ],
+        "Streamlit study-pack export",
+    )
 
 
 def verify_trust_and_scope(texts: dict[str, str]) -> None:
@@ -135,6 +145,7 @@ def verify_demo_script(demo_script: str) -> None:
             "missense",
             "nonsense",
             "teacher guide",
+            "downloadable study pack",
             "Ensembl REST attribution",
             "not clinical variant interpretation",
             "python scripts/verify_product_readiness.py",

@@ -1274,6 +1274,37 @@ def saved_genes_table() -> pd.DataFrame:
     return pd.DataFrame(st.session_state.get("saved_genes", []))
 
 
+def saved_gene_study_pack(saved_records: list[dict]) -> str:
+    lines = [
+        "# Gene Central Dogma Explorer study pack",
+        "",
+        "Use this as a lightweight review sheet for saved genes. It is educational only and is not medical advice.",
+        "",
+        "## Saved genes",
+    ]
+    for index, record in enumerate(saved_records, start=1):
+        lines.extend(
+            [
+                "",
+                f"### {index}. {record.get('symbol', 'Gene')}",
+                f"- Species: {record.get('species', 'NA')}",
+                f"- Type: {record.get('type', 'NA')}",
+                f"- Location: {record.get('location', 'NA')}",
+                f"- Why it matters: {record.get('why', 'No summary saved.')}",
+            ]
+        )
+    lines.extend(
+        [
+            "",
+            "## Review prompts",
+            "- Pick one saved gene and trace DNA -> RNA -> protein in one sentence.",
+            "- Compare a missense and nonsense mutation. What changes at the codon and amino-acid levels?",
+            "- Explain why this app is a teaching tool rather than clinical variant interpretation.",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def central_dogma_map(data: dict) -> None:
     gene = data["gene"]
     sequences = data["sequences"]
@@ -1872,17 +1903,27 @@ def render_sequence_strip(sequences: dict) -> None:
 
 
 def render_saved_genes_section() -> None:
+    saved_records = st.session_state.get("saved_genes", [])
     saved_df = saved_genes_table()
     if saved_df.empty:
         st.info("No saved genes yet. Save a gene from Overview to build a study list for this session.")
         return
     st.dataframe(saved_df, width="stretch", hide_index=True)
-    st.download_button(
-        "Download Saved Gene List",
-        data=saved_df.to_json(orient="records", indent=2),
-        file_name="saved_gene_study_list.json",
-        mime="application/json",
-    )
+    export_cols = st.columns(2)
+    with export_cols[0]:
+        st.download_button(
+            "Download Study Pack",
+            data=saved_gene_study_pack(saved_records),
+            file_name="saved_gene_study_pack.md",
+            mime="text/markdown",
+        )
+    with export_cols[1]:
+        st.download_button(
+            "Download Saved Gene Data",
+            data=saved_df.to_json(orient="records", indent=2),
+            file_name="saved_gene_study_list.json",
+            mime="application/json",
+        )
 
 
 def render_isoform_section(transcripts: list[dict], selected: dict, symbol: str, species: str, gene: dict) -> None:
