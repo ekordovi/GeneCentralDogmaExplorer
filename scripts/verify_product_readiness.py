@@ -24,6 +24,7 @@ REVIEW_NOTES = ROOT / "app_store" / "review_notes.txt"
 PRIVACY_ANSWERS = ROOT / "app_store" / "privacy_answers.md"
 EXAMPLE_CACHE = ROOT / "data" / "example_gene_cache.json"
 IOS_CONTENT = ROOT / "iOS" / "GeneCentralDogmaExplorer" / "GeneCentralDogmaExplorer" / "ContentView.swift"
+IOS_API_CLIENT = ROOT / "iOS" / "GeneCentralDogmaExplorer" / "GeneCentralDogmaExplorer" / "GeneDogmaAPIClient.swift"
 IOS_PRIVACY = ROOT / "iOS" / "GeneCentralDogmaExplorer" / "GeneCentralDogmaExplorer" / "PrivacyInfo.xcprivacy"
 
 
@@ -65,7 +66,7 @@ def verify_first_30_seconds(app: str, example: dict) -> None:
     )
 
 
-def verify_learning_loop(app: str, ios: str) -> None:
+def verify_learning_loop(app: str, ios: str, ios_api_client: str) -> None:
     require_all(
         app,
         [
@@ -89,6 +90,15 @@ def verify_learning_loop(app: str, ios: str) -> None:
             "Gene Central Dogma Report",
         ],
         "iOS mobile learning loop",
+    )
+    require_all(
+        ios_api_client,
+        [
+            "userDefaults.stringArray(forKey: savedGenesKey)",
+            "userDefaults.set(savedGenes, forKey: savedGenesKey)",
+            "persistSavedGenes()",
+        ],
+        "iOS saved-gene persistence",
     )
     require_all(
         app,
@@ -199,6 +209,7 @@ def main() -> int:
         app = read(APP)
         api = read(API)
         ios = read(IOS_CONTENT)
+        ios_api_client = read(IOS_API_CLIENT)
         ios_privacy = read(IOS_PRIVACY)
         example = json.loads(read(EXAMPLE_CACHE))
         docs = {
@@ -216,7 +227,7 @@ def main() -> int:
         }
 
         verify_first_30_seconds(app, example)
-        verify_learning_loop(app, ios)
+        verify_learning_loop(app, ios, ios_api_client)
         verify_trust_and_scope({**docs, "api.py": api})
         verify_demo_script(docs["demo_script.md"])
         verify_app_store_artifacts(docs, ios_privacy)

@@ -176,11 +176,13 @@ final class GeneDogmaViewModel: ObservableObject {
     @Published var quizFeedback: String?
 
     private let savedGenesKey = "saved_gene_symbols"
+    private let userDefaults: UserDefaults
     private var client: GeneDogmaAPIClient
 
-    init(client: GeneDogmaAPIClient = GeneDogmaAPIClient()) {
+    init(client: GeneDogmaAPIClient = GeneDogmaAPIClient(), userDefaults: UserDefaults = .standard) {
         self.client = client
-        self.savedGenes = UserDefaults.standard.stringArray(forKey: savedGenesKey) ?? []
+        self.userDefaults = userDefaults
+        self.savedGenes = userDefaults.stringArray(forKey: savedGenesKey) ?? []
         loadBundledExample()
     }
 
@@ -251,7 +253,7 @@ final class GeneDogmaViewModel: ObservableObject {
         guard let gene = response?.gene.displayName, !gene.isEmpty else { return }
         if !savedGenes.contains(gene) {
             savedGenes.insert(gene, at: 0)
-            UserDefaults.standard.set(savedGenes, forKey: savedGenesKey)
+            persistSavedGenes()
         }
     }
 
@@ -273,6 +275,7 @@ final class GeneDogmaViewModel: ObservableObject {
         guard configuration.shouldApply else { return }
         if !configuration.savedGenes.isEmpty {
             savedGenes = configuration.savedGenes
+            persistSavedGenes()
         }
         if configuration.shouldPrimeMutationComparison {
             loadBundledExample()
@@ -292,6 +295,10 @@ final class GeneDogmaViewModel: ObservableObject {
         mutationText = substitution
         comparisonMutationA = substitution
         comparisonMutationB = nonsense.isEmpty ? deletion : nonsense
+    }
+
+    private func persistSavedGenes() {
+        userDefaults.set(savedGenes, forKey: savedGenesKey)
     }
 }
 

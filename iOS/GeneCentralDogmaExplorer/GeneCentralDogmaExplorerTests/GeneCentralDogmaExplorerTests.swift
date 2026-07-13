@@ -2,6 +2,13 @@ import XCTest
 @testable import GeneCentralDogmaExplorer
 
 final class GeneCentralDogmaExplorerTests: XCTestCase {
+    func temporaryDefaults(named name: String = #function) -> UserDefaults {
+        let suiteName = "GeneCentralDogmaExplorerTests.\(name).\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        return defaults
+    }
+
     func testBundledHBBDecodes() throws {
         let response = try LocalExampleStore.loadHBBExample(bundle: Bundle(for: GeneDogmaViewModel.self))
         XCTAssertEqual(response.gene.displayName, "HBB")
@@ -115,7 +122,7 @@ final class GeneCentralDogmaExplorerTests: XCTestCase {
 
     @MainActor
     func testDemoConfigurationPrimesScreenshotState() throws {
-        let viewModel = GeneDogmaViewModel()
+        let viewModel = GeneDogmaViewModel(userDefaults: temporaryDefaults())
         viewModel.applyDemoConfiguration(
             DemoLaunchConfiguration(arguments: ["app", "--gene-demo=screenshots", "--gene-demo-tab=mutation"])
         )
@@ -124,5 +131,27 @@ final class GeneCentralDogmaExplorerTests: XCTestCase {
         XCTAssertEqual(viewModel.mutationResult?.effect, "missense")
         XCTAssertEqual(viewModel.comparisonResultA?.effect, "missense")
         XCTAssertEqual(viewModel.comparisonResultB?.effect, "nonsense")
+    }
+
+    @MainActor
+    func testSavedGenesPersistAcrossViewModelInstances() throws {
+        let defaults = temporaryDefaults()
+        let firstViewModel = GeneDogmaViewModel(userDefaults: defaults)
+
+        firstViewModel.saveCurrentGene()
+
+        let secondViewModel = GeneDogmaViewModel(userDefaults: defaults)
+        XCTAssertEqual(secondViewModel.savedGenes, ["HBB"])
+    }
+
+    @MainActor
+    func testDemoSavedGenesPersistForScreenshotPreparation() throws {
+        let defaults = temporaryDefaults()
+        let firstViewModel = GeneDogmaViewModel(userDefaults: defaults)
+
+        firstViewModel.applyDemoConfiguration(DemoLaunchConfiguration(arguments: ["app", "--gene-demo-saved"]))
+
+        let secondViewModel = GeneDogmaViewModel(userDefaults: defaults)
+        XCTAssertEqual(secondViewModel.savedGenes, ["HBB", "BRCA1", "TP53"])
     }
 }

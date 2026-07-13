@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PBXPROJ = ROOT / "iOS" / "GeneCentralDogmaExplorer" / "GeneCentralDogmaExplorer.xcodeproj" / "project.pbxproj"
 INFO_PLIST = ROOT / "iOS" / "GeneCentralDogmaExplorer" / "GeneCentralDogmaExplorer" / "Info.plist"
 CONTENT_VIEW = ROOT / "iOS" / "GeneCentralDogmaExplorer" / "GeneCentralDogmaExplorer" / "ContentView.swift"
+API_CLIENT = ROOT / "iOS" / "GeneCentralDogmaExplorer" / "GeneCentralDogmaExplorer" / "GeneDogmaAPIClient.swift"
 
 
 def require(condition: bool, message: str) -> None:
@@ -32,6 +33,7 @@ def main() -> int:
     project = PBXPROJ.read_text(encoding="utf-8")
     plist = INFO_PLIST.read_text(encoding="utf-8")
     content = CONTENT_VIEW.read_text(encoding="utf-8")
+    api_client = API_CLIENT.read_text(encoding="utf-8")
 
     require("$(GENE_DOGMA_API_BASE_URL)" in plist, "Info.plist must read GeneDogmaAPIBaseURL from build settings.")
 
@@ -44,6 +46,8 @@ def main() -> int:
     require("DisclosureGroup(\"Show sequence preview\")" in content, "Dogma sequence previews must be opt-in.")
     require('DisclosureGroup("Show \\(title) letters")' in content, "Key sequence letters must be opt-in.")
     require("sequenceSummaryText" in content, "iOS app must summarize sequences before revealing letters.")
+    require("userDefaults.stringArray(forKey: savedGenesKey)" in api_client, "iOS saved genes must load from local storage.")
+    require("userDefaults.set(savedGenes, forKey: savedGenesKey)" in api_client, "iOS saved genes must persist to local storage.")
 
     print("ok iOS API URL build settings")
     return 0
