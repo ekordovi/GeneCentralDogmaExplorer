@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -16,6 +18,7 @@ from gene_dogma.sequence_utils import simulate_dna_mutation
 
 PROJECT_ROOT = Path(__file__).parent
 EXAMPLE_CACHE = PROJECT_ROOT / "data" / "example_gene_cache.json"
+LOGGER = logging.getLogger("gene_dogma.api")
 
 GeneFetcher = Callable[[str, str, str | None], dict[str, Any]]
 
@@ -126,8 +129,17 @@ def service_metadata() -> dict[str, Any]:
         "educational_disclaimer": EDUCATIONAL_DISCLAIMER,
         "support_url": SUPPORT_URL,
         "privacy_url": PRIVACY_URL,
+        "privacy_safe_logging": True,
         "endpoints": list(PUBLIC_ENDPOINTS),
     }
+
+
+def request_log_category(status_code: int) -> str:
+    if status_code < 400:
+        return "ok"
+    if status_code < 500:
+        return "client_error"
+    return "server_error"
 
 
 def create_app(
@@ -146,6 +158,28 @@ def create_app(
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["*"],
     )
+
+    @app.middleware("http")
+    async def privacy_safe_request_log(request: Request, call_next):
+        started = time.perf_counter()
+        status_code = 500
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+            return response
+        except Exception:
+            status_code = 500
+            raise
+        finally:
+            duration_ms = round((time.perf_counter() - started) * 1000, 2)
+            LOGGER.info(
+                "api_request method=%s path=%s status=%s category=%s duration_ms=%.2f",
+                request.method,
+                request.url.path,
+                status_code,
+                request_log_category(status_code),
+                duration_ms,
+            )
 
     @app.get("/api/health")
     def health() -> dict[str, Any]:

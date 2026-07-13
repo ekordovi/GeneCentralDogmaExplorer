@@ -53,8 +53,10 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   - Support: `https://ekordovi.github.io/GeneCentralDogmaExplorer/support.html`
   - Privacy: `https://ekordovi.github.io/GeneCentralDogmaExplorer/privacy.html`
 - Confirm the AppIcon asset renders correctly in Xcode and on the simulator.
-- If crash/error logging is added, keep it privacy-compliant: no gene-search
-  payloads, no health data, no names, no contact data, and no analytics profile.
+- Confirm backend logs stay privacy-compliant: method, path without query
+  string, status code, coarse category, and duration only. No gene-search
+  payloads, mutation payloads, sequences, health data, names, contact data, or
+  analytics profile.
 
 ## TestFlight
 

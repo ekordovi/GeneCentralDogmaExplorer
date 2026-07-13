@@ -21,7 +21,8 @@ curl https://your-api-host.example/api/info
 
 `/api/health` should identify the service name, version, environment, and
 Ensembl REST data source. `/api/info` should also expose the public support
-URL, privacy URL, educational disclaimer, and endpoint list.
+URL, privacy URL, educational disclaimer, endpoint list, and
+`privacy_safe_logging: true`.
 
 3. Confirm live example lookup:
 
@@ -114,9 +115,10 @@ python scripts/verify_release_ready.py --live-lookup
 This command intentionally fails while the Release build setting still points
 to `https://your-api-host.example`.
 
-## Privacy-Safe Error Logging
+## Privacy-Safe Operational Logging
 
-Version 1 does not need analytics. If crash/error logging is added later, do not
-send gene-search terms, health data, names, contact details, precise device
-location, or persistent analytics profiles. Keep logs limited to app version,
-endpoint availability, crash stack, and coarse error category.
+Version 1 does not use analytics. The FastAPI backend logs only method, path
+without query string, status code, coarse category, and duration. It does not
+log gene-search terms, mutation payloads, DNA/protein sequences, health data,
+names, contact details, precise device location, or analytics profiles. If
+crash logging is added later, keep it at the same coarse operational level.

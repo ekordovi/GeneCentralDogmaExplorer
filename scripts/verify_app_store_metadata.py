@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 METADATA = ROOT / "app_store" / "metadata" / "en-US"
 SCREENSHOTS = ROOT / "app_store" / "screenshots.md"
+PRIVACY_ANSWERS = ROOT / "app_store" / "privacy_answers.md"
 IOS_CLIENT = ROOT / "iOS" / "GeneCentralDogmaExplorer" / "GeneCentralDogmaExplorer" / "GeneDogmaAPIClient.swift"
 IOS_CONTENT = ROOT / "iOS" / "GeneCentralDogmaExplorer" / "GeneCentralDogmaExplorer" / "ContentView.swift"
 SUPPORT_URL = "https://ekordovi.github.io/GeneCentralDogmaExplorer/support.html"
@@ -56,6 +57,7 @@ def main() -> int:
         require(phrase not in description, f"description.txt should not imply medical use: {phrase}")
 
     screenshots = read(SCREENSHOTS)
+    privacy_answers = read(PRIVACY_ANSWERS).lower()
     ios_source = read(IOS_CLIENT)
     ios_content = read(IOS_CONTENT)
     required_screenshot_phrases = [
@@ -84,6 +86,8 @@ def main() -> int:
         require(flag in ios_source, f"iOS demo launch flag missing from source: {flag}")
     require("ShareLink" in ios_content, "iOS app must include a native ShareLink for reports.")
     require("Gene Central Dogma Report" in ios_content, "iOS story report must have a shareable title.")
+    require("endpoint path without query string" in privacy_answers, "privacy answers must describe coarse backend logs.")
+    require("no gene-search terms" in privacy_answers, "privacy answers must forbid gene-search logging.")
 
     print("ok App Store metadata")
     return 0

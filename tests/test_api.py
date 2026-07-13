@@ -1,4 +1,5 @@
 import json
+import logging
 
 import pytest
 
@@ -15,6 +16,7 @@ from api import (
     MUTATION_MISMATCH_MESSAGE,
     create_app,
     parse_allowed_origins,
+    request_log_category,
 )
 from gene_dogma import EnsemblError
 
@@ -102,6 +104,7 @@ def test_info_returns_public_metadata_without_sensitive_data():
     assert payload["name"] == API_NAME
     assert payload["data_source"] == DATA_SOURCE
     assert payload["educational_disclaimer"] == EDUCATIONAL_DISCLAIMER
+    assert payload["privacy_safe_logging"] is True
     assert "/api/gene" in payload["endpoints"]
     serialized = json.dumps(payload).lower()
     assert "key" not in serialized
@@ -173,6 +176,29 @@ def test_mutation_validation_error():
     assert response.status_code == 400
     assert response.json()["detail"] == MUTATION_MISMATCH_MESSAGE
     assert "Reference base mismatch" not in response.text
+
+
+def test_request_logging_omits_query_strings_and_payloads(caplog):
+    client = TestClient(create_app(fake_gene))
+    caplog.set_level(logging.INFO, logger="gene_dogma.api")
+
+    client.get("/api/gene", params={"symbol": "SECRETGENE", "species": "fake_species", "transcript_id": "TX2"})
+    client.post("/api/mutation", json={"coding_dna": "ATGGAGTAA", "change": "5 A>T"})
+
+    log_text = caplog.text
+    assert "api_request" in log_text
+    assert "/api/gene" in log_text
+    assert "/api/mutation" in log_text
+    assert "SECRETGENE" not in log_text
+    assert "fake_species" not in log_text
+    assert "ATGGAGTAA" not in log_text
+    assert "5 A>T" not in log_text
+
+
+def test_request_log_category_is_coarse():
+    assert request_log_category(200) == "ok"
+    assert request_log_category(404) == "client_error"
+    assert request_log_category(502) == "server_error"
 
 
 def test_parse_allowed_origins_defaults_to_dev_wildcard():

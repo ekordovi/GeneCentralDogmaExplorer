@@ -28,6 +28,13 @@ later. They are not synced to a server by version 1 of the app.
 Live gene lookup depends on Ensembl REST through the app backend. Your lookup
 terms may be processed by the backend and Ensembl to return gene information.
 
+## Operational Logs
+
+The backend keeps only coarse operational logs for uptime and debugging: request
+method, endpoint path without query string, status code, coarse error category,
+and duration. It does not log gene-search terms, mutation payloads, DNA/protein
+sequences, names, contact details, health data, or analytics profiles.
+
 ## Contact
 
 For support or privacy questions, use the public support page, static

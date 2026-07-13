@@ -70,6 +70,7 @@ def verify_api(base_url: str, live_lookup: bool) -> None:
     info = request_json(base_url, "/api/info")
     require(isinstance(info, dict) and info.get("name") == API_NAME, "Info endpoint must identify the API.")
     require(bool(info.get("educational_disclaimer")), "Info endpoint must include educational disclaimer.")
+    require(info.get("privacy_safe_logging") is True, "Info endpoint must advertise privacy-safe logging.")
     require("/api/gene" in set(info.get("endpoints") or []), "Info endpoint must list public API endpoints.")
 
     example = request_json(base_url, "/api/example")
