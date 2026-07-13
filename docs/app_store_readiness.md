@@ -26,9 +26,14 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   of leaving CORS open for every origin.
 - Confirm these endpoints work:
   - `GET /api/health`
+  - `GET /api/info`
   - `GET /api/example`
+  - `GET /api/famous-examples`
   - `GET /api/gene?symbol=HBB&species=homo_sapiens`
   - `POST /api/mutation`
+- Confirm `/api/health` includes the API name, version, and Ensembl REST data
+  source. Confirm `/api/info` includes the educational disclaimer, support URL,
+  privacy URL, and public endpoint list.
 - Update the Release `GENE_DOGMA_API_BASE_URL` iOS build setting with the
   deployed HTTPS base URL. `Info.plist` reads `GeneDogmaAPIBaseURL` from that
   build setting.

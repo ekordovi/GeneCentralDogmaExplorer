@@ -16,7 +16,12 @@ The iOS app needs the FastAPI backend on HTTPS for live lookup.
 
 ```bash
 curl https://your-api-host.example/api/health
+curl https://your-api-host.example/api/info
 ```
+
+`/api/health` should identify the service name, version, environment, and
+Ensembl REST data source. `/api/info` should also expose the public support
+URL, privacy URL, educational disclaimer, and endpoint list.
 
 3. Confirm live example lookup:
 
@@ -28,6 +33,8 @@ curl "https://your-api-host.example/api/gene?symbol=HBB&species=homo_sapiens"
 
 ```bash
 GENE_DOGMA_ALLOWED_ORIGINS=https://gene-explorer.streamlit.app,https://your-support-site.example
+GENE_DOGMA_API_ENV=production
+GENE_DOGMA_API_VERSION=1.0.0
 ```
 
 For a public educational API, CORS is not the main security boundary, but

@@ -1,9 +1,14 @@
+import json
+
 import pytest
 
 fastapi = pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
 
 from api import (
+    API_NAME,
+    DATA_SOURCE,
+    EDUCATIONAL_DISCLAIMER,
     GENE_LOOKUP_FAILED_MESSAGE,
     GENE_NOT_FOUND_MESSAGE,
     LIVE_LOOKUP_UNAVAILABLE_MESSAGE,
@@ -76,6 +81,31 @@ def test_example_returns_hbb_fixture():
     response = client.get("/api/example")
     assert response.status_code == 200
     assert response.json()["gene"]["display_name"] == "HBB"
+
+
+def test_health_returns_service_identity():
+    client = TestClient(create_app(fake_gene))
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["name"] == API_NAME
+    assert payload["version"]
+    assert payload["data_source"] == DATA_SOURCE
+
+
+def test_info_returns_public_metadata_without_sensitive_data():
+    client = TestClient(create_app(fake_gene))
+    response = client.get("/api/info")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["name"] == API_NAME
+    assert payload["data_source"] == DATA_SOURCE
+    assert payload["educational_disclaimer"] == EDUCATIONAL_DISCLAIMER
+    assert "/api/gene" in payload["endpoints"]
+    serialized = json.dumps(payload).lower()
+    assert "key" not in serialized
+    assert "secret" not in serialized
 
 
 def test_famous_examples_include_study_genes():

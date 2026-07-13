@@ -60,7 +60,9 @@ GENE_DOGMA_ALLOWED_ORIGINS=https://your-app.example,https://your-site.example uv
 Important endpoints:
 
 - `GET /api/health`
+- `GET /api/info`
 - `GET /api/example`
+- `GET /api/famous-examples`
 - `GET /api/gene?symbol=HBB&species=homo_sapiens`
 - `POST /api/mutation`
 

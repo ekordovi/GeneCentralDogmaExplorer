@@ -20,6 +20,8 @@ from gene_dogma.sequence_utils import simulate_dna_mutation  # noqa: E402
 
 EXAMPLE_CACHE = PROJECT_ROOT / "data" / "example_gene_cache.json"
 FAMOUS_SYMBOLS = ("HBB", "BRCA1", "TP53")
+API_NAME = "Gene Central Dogma Explorer API"
+DATA_SOURCE = "Ensembl REST"
 
 
 def load_example() -> dict:
@@ -61,6 +63,14 @@ def request_json(base_url: str, path: str, query: dict[str, str] | None = None) 
 def verify_api(base_url: str, live_lookup: bool) -> None:
     health = request_json(base_url, "/api/health")
     require(isinstance(health, dict) and health.get("status") == "ok", "Health endpoint must return ok.")
+    require(health.get("name") == API_NAME, "Health endpoint must identify the Gene Central Dogma Explorer API.")
+    require(bool(health.get("version")), "Health endpoint must include API version.")
+    require(health.get("data_source") == DATA_SOURCE, "Health endpoint must identify Ensembl REST data source.")
+
+    info = request_json(base_url, "/api/info")
+    require(isinstance(info, dict) and info.get("name") == API_NAME, "Info endpoint must identify the API.")
+    require(bool(info.get("educational_disclaimer")), "Info endpoint must include educational disclaimer.")
+    require("/api/gene" in set(info.get("endpoints") or []), "Info endpoint must list public API endpoints.")
 
     example = request_json(base_url, "/api/example")
     require(isinstance(example, dict) and example["gene"]["display_name"] == "HBB", "API example must return HBB.")

@@ -19,6 +19,22 @@ EXAMPLE_CACHE = PROJECT_ROOT / "data" / "example_gene_cache.json"
 
 GeneFetcher = Callable[[str, str, str | None], dict[str, Any]]
 
+API_VERSION = os.getenv("GENE_DOGMA_API_VERSION", "1.0.0")
+API_ENVIRONMENT = os.getenv("GENE_DOGMA_API_ENV", "development")
+API_NAME = "Gene Central Dogma Explorer API"
+DATA_SOURCE = "Ensembl REST"
+EDUCATIONAL_DISCLAIMER = "Educational use only. Not medical advice or clinical variant interpretation."
+SUPPORT_URL = "https://ekordovi.github.io/GeneCentralDogmaExplorer/support.html"
+PRIVACY_URL = "https://ekordovi.github.io/GeneCentralDogmaExplorer/privacy.html"
+PUBLIC_ENDPOINTS = (
+    "/api/health",
+    "/api/info",
+    "/api/example",
+    "/api/famous-examples",
+    "/api/gene",
+    "/api/mutation",
+)
+
 GENE_NOT_FOUND_MESSAGE = (
     "We couldn't find that gene symbol for this species. Try checking the spelling "
     "or selecting another species."
@@ -101,13 +117,26 @@ def friendly_mutation_error(exc: ValueError) -> str:
     return MUTATION_FORMAT_MESSAGE
 
 
+def service_metadata() -> dict[str, Any]:
+    return {
+        "name": API_NAME,
+        "version": API_VERSION,
+        "environment": API_ENVIRONMENT,
+        "data_source": DATA_SOURCE,
+        "educational_disclaimer": EDUCATIONAL_DISCLAIMER,
+        "support_url": SUPPORT_URL,
+        "privacy_url": PRIVACY_URL,
+        "endpoints": list(PUBLIC_ENDPOINTS),
+    }
+
+
 def create_app(
     gene_fetcher: GeneFetcher = default_gene_fetcher,
     allowed_origins: list[str] | None = None,
 ) -> FastAPI:
     app = FastAPI(
-        title="Gene Central Dogma Explorer API",
-        version="1.0.0",
+        title=API_NAME,
+        version=API_VERSION,
         description="Backend API for the native iOS Gene Central Dogma Explorer app.",
     )
     app.add_middleware(
@@ -119,8 +148,19 @@ def create_app(
     )
 
     @app.get("/api/health")
-    def health() -> dict[str, str]:
-        return {"status": "ok"}
+    def health() -> dict[str, Any]:
+        metadata = service_metadata()
+        return {
+            "status": "ok",
+            "name": metadata["name"],
+            "version": metadata["version"],
+            "environment": metadata["environment"],
+            "data_source": metadata["data_source"],
+        }
+
+    @app.get("/api/info")
+    def info() -> dict[str, Any]:
+        return service_metadata()
 
     @app.get("/api/example")
     def example() -> dict[str, Any]:
