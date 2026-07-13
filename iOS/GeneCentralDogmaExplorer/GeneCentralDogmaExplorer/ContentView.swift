@@ -228,11 +228,26 @@ struct DogmaPill: View {
 
 struct GeneExploreScreen: View {
     @ObservedObject var viewModel: GeneDogmaViewModel
+    @AppStorage("gene_explore_learning_mode") private var learningMode = "Beginner"
+
+    private var isAdvancedMode: Bool {
+        learningMode == "Advanced"
+    }
 
     var body: some View {
         NavigationStack {
             List {
                 if let response = viewModel.response {
+                    Section {
+                        Picker("Learning mode", selection: $learningMode) {
+                            Text("Beginner").tag("Beginner")
+                            Text("Advanced").tag("Advanced")
+                        }
+                        .pickerStyle(.segmented)
+                        Text(isAdvancedMode ? "Advanced mode shows isoforms, expression, structure links, and sequence previews." : "Beginner mode keeps the main story visible first.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                     Section("Start here") {
                         GeneSummaryCard(response: response)
                         BeginnerTakeaway(response: response)
@@ -244,24 +259,8 @@ struct GeneExploreScreen: View {
                         DogmaStep(title: "Coding sequence", detail: "The part read in three-letter codons.", sequence: response.sequences.codingDna)
                         DogmaStep(title: "Amino acid chain", detail: "The translated protein sequence.", sequence: response.sequences.protein)
                     }
-                    Section("Isoforms") {
-                        ForEach(response.transcripts) { transcript in
-                            TranscriptRow(transcript: transcript)
-                        }
-                    }
                     Section("Teaching context") {
                         Text(diseaseNote(response))
-                    }
-                    Section("Expression context") {
-                        Text(expressionNote(response))
-                    }
-                    Section("Structure mode") {
-                        if let proteinID = response.selectedTranslation?.id, !proteinID.isEmpty {
-                            Link("Open AlphaFold entry", destination: URL(string: "https://alphafold.ebi.ac.uk/entry/\(proteinID)")!)
-                            Link("Search PDB", destination: URL(string: "https://www.rcsb.org/search?request=%7B%22query%22:%7B%22type%22:%22terminal%22,%22service%22:%22full_text%22,%22parameters%22:%7B%22value%22:%22\(proteinID)%22%7D%7D,%22return_type%22:%22entry%22%7D")!)
-                        } else {
-                            Text("No protein ID returned for structure lookup.")
-                        }
                     }
                     Section("Story report") {
                         Text(storyReport(response: response))
@@ -271,9 +270,32 @@ struct GeneExploreScreen: View {
                             Label("Share Report", systemImage: "square.and.arrow.up")
                         }
                     }
-                    Section("Key sequences") {
-                        SequencePreview(title: "Coding DNA", sequence: response.sequences.codingDna)
-                        SequencePreview(title: "Protein", sequence: response.sequences.protein)
+                    if isAdvancedMode {
+                        Section("Isoforms") {
+                            ForEach(response.transcripts) { transcript in
+                                TranscriptRow(transcript: transcript)
+                            }
+                        }
+                        Section("Expression context") {
+                            Text(expressionNote(response))
+                        }
+                        Section("Structure mode") {
+                            if let proteinID = response.selectedTranslation?.id, !proteinID.isEmpty {
+                                Link("Open AlphaFold entry", destination: URL(string: "https://alphafold.ebi.ac.uk/entry/\(proteinID)")!)
+                                Link("Search PDB", destination: URL(string: "https://www.rcsb.org/search?request=%7B%22query%22:%7B%22type%22:%22terminal%22,%22service%22:%22full_text%22,%22parameters%22:%7B%22value%22:%22\(proteinID)%22%7D%7D,%22return_type%22:%22entry%22%7D")!)
+                            } else {
+                                Text("No protein ID returned for structure lookup.")
+                            }
+                        }
+                        Section("Key sequences") {
+                            SequencePreview(title: "Coding DNA", sequence: response.sequences.codingDna)
+                            SequencePreview(title: "Protein", sequence: response.sequences.protein)
+                        }
+                    } else {
+                        Section("Advanced details") {
+                            Text("Switch to Advanced mode to inspect isoforms, expression notes, structure links, and sequence previews.")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 } else {
                     ContentUnavailableView("No gene loaded", systemImage: "dna", description: Text("Load the HBB demo or search for a gene."))

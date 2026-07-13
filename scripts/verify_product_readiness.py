@@ -88,6 +88,9 @@ def verify_learning_loop(app: str, ios: str, ios_api_client: str) -> None:
             "DisclosureGroup(\"Show \\(title) letters\")",
             "ShareLink",
             "Gene Central Dogma Report",
+            "@AppStorage(\"gene_explore_learning_mode\")",
+            "Picker(\"Learning mode\"",
+            "Switch to Advanced mode to inspect isoforms",
         ],
         "iOS mobile learning loop",
     )
