@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 METADATA = ROOT / "app_store" / "metadata" / "en-US"
 SCREENSHOTS = ROOT / "app_store" / "screenshots.md"
 IOS_CLIENT = ROOT / "iOS" / "GeneCentralDogmaExplorer" / "GeneCentralDogmaExplorer" / "GeneDogmaAPIClient.swift"
+IOS_CONTENT = ROOT / "iOS" / "GeneCentralDogmaExplorer" / "GeneCentralDogmaExplorer" / "ContentView.swift"
 SUPPORT_URL = "https://ekordovi.github.io/GeneCentralDogmaExplorer/support.html"
 PRIVACY_URL = "https://ekordovi.github.io/GeneCentralDogmaExplorer/privacy.html"
 
@@ -48,6 +49,7 @@ def main() -> int:
     require("not medical advice" in description, "description.txt must include the medical disclaimer.")
     require("education only" in description, "description.txt must clearly frame the app as educational.")
     require("teacher guide" in description, "description.txt must mention the teacher guide.")
+    require("shareable gene story reports" in description, "description.txt must mention shareable reports.")
     for phrase in forbidden:
         if phrase in {"diagnosis", "treatment guidance", "clinical variant interpretation"}:
             continue
@@ -55,6 +57,7 @@ def main() -> int:
 
     screenshots = read(SCREENSHOTS)
     ios_source = read(IOS_CLIENT)
+    ios_content = read(IOS_CONTENT)
     required_screenshot_phrases = [
         "Start with HBB",
         "Follow the Central Dogma",
@@ -79,6 +82,8 @@ def main() -> int:
     ]
     for flag in required_ios_demo_flags:
         require(flag in ios_source, f"iOS demo launch flag missing from source: {flag}")
+    require("ShareLink" in ios_content, "iOS app must include a native ShareLink for reports.")
+    require("Gene Central Dogma Report" in ios_content, "iOS story report must have a shareable title.")
 
     print("ok App Store metadata")
     return 0

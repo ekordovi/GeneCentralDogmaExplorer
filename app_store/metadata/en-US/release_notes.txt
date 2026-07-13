@@ -1,1 +1,1 @@
-Version 1.0 includes the offline HBB demo, live gene lookup, central-dogma path, simple mutation simulation, compare-two-mutations, saved genes, study mode, public support/privacy pages, and a privacy-first educational disclaimer.
+Version 1.0 includes the offline HBB demo, live gene lookup, central-dogma path, simple mutation simulation, compare-two-mutations, saved genes, shareable reports, study mode, teacher guide, public support/privacy pages, and a privacy-first educational disclaimer.

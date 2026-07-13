@@ -176,12 +176,15 @@ struct SearchScreen: View {
                     ErrorNotice(message: error)
                 }
 
-                if viewModel.response != nil {
+                if let response = viewModel.response {
                     Section("Session") {
                         Button {
                             viewModel.saveCurrentGene()
                         } label: {
                             Label("Save Gene", systemImage: "bookmark")
+                        }
+                        ShareLink(item: storyReport(response: response)) {
+                            Label("Share Report", systemImage: "square.and.arrow.up")
                         }
                     }
                 }
@@ -264,6 +267,9 @@ struct GeneExploreScreen: View {
                         Text(storyReport(response: response))
                             .font(.body)
                             .textSelection(.enabled)
+                        ShareLink(item: storyReport(response: response)) {
+                            Label("Share Report", systemImage: "square.and.arrow.up")
+                        }
                     }
                     Section("Key sequences") {
                         SequencePreview(title: "Coding DNA", sequence: response.sequences.codingDna)
@@ -891,6 +897,8 @@ func quizQuestions(response: GeneDogmaResponse) -> [StudyQuestion] {
 
 func storyReport(response: GeneDogmaResponse) -> String {
     """
+    Gene Central Dogma Report: \(response.gene.displayName)
+
     Beginner explanation:
     \(whyGeneMatters(response))
 

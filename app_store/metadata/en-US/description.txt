@@ -1,6 +1,6 @@
 Gene Central Dogma Explorer helps students and curious learners understand how a gene connects to RNA transcripts, coding sequence, proteins, and simple mutation effects.
 
-Start with the offline HBB example, then try live lookup for genes such as BRCA1 and TP53. Follow the central dogma from DNA to RNA to protein, inspect clear gene cards, compare two simple coding-DNA mutations, save genes for later, and use teacher-ready study prompts to review the core idea.
+Start with the offline HBB example, then try live lookup for genes such as BRCA1 and TP53. Follow the central dogma from DNA to RNA to protein, inspect clear gene cards, compare two simple coding-DNA mutations, save or share a report, and use teacher-ready study prompts to review the core idea.
 
 Version 1 focuses on education:
 
@@ -9,6 +9,7 @@ Version 1 focuses on education:
 - DNA, RNA, coding sequence, and protein views
 - Simple mutation simulator for missense, nonsense, silent, and frameshift teaching examples
 - Compare-two-mutations workflow
+- Shareable gene story reports
 - Saved genes, quiz mode, and a two-minute teacher guide
 - Beginner-friendly explanations with advanced details available when needed
 

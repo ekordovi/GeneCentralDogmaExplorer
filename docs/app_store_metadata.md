@@ -30,8 +30,8 @@ effects.
 
 Start with the offline HBB example, then try live lookup for genes such as
 BRCA1 and TP53. Follow the central dogma from DNA to RNA to protein, inspect
-clear gene cards, compare two simple coding-DNA mutations, save genes for later,
-and use teacher-ready study prompts to review the core idea.
+clear gene cards, compare two simple coding-DNA mutations, save or share a
+report, and use teacher-ready study prompts to review the core idea.
 
 Version 1 focuses on education:
 
@@ -41,6 +41,7 @@ Version 1 focuses on education:
 - Simple mutation simulator for missense, nonsense, silent, and frameshift
   teaching examples
 - Compare-two-mutations workflow
+- Shareable gene story reports
 - Saved genes, quiz mode, and a two-minute teacher guide
 - Beginner-friendly explanations with advanced details available when needed
 
@@ -50,9 +51,9 @@ guidance, or clinical variant interpretation.
 ## What's New
 
 Version 1.0 includes the offline HBB demo, live gene lookup, central-dogma path,
-simple mutation simulation, compare-two-mutations, saved genes, study mode,
-teacher guide, public support/privacy pages, and a privacy-first educational
-disclaimer.
+simple mutation simulation, compare-two-mutations, saved genes, shareable
+reports, study mode, teacher guide, public support/privacy pages, and a
+privacy-first educational disclaimer.
 
 ## Screenshot Captions
 

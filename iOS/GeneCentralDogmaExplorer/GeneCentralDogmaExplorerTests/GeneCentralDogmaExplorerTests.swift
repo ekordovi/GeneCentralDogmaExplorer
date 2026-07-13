@@ -64,6 +64,15 @@ final class GeneCentralDogmaExplorerTests: XCTestCase {
         XCTAssertTrue(steps[2].prompt.contains("missense versus nonsense"))
     }
 
+    func testStoryReportIsShareableAndEducational() throws {
+        let response = try LocalExampleStore.loadHBBExample(bundle: Bundle(for: GeneDogmaViewModel.self))
+        let report = storyReport(response: response)
+
+        XCTAssertTrue(report.contains("Gene Central Dogma Report: HBB"))
+        XCTAssertTrue(report.contains("Selected transcript"))
+        XCTAssertTrue(report.contains("This report is educational and is not medical advice."))
+    }
+
     func testLocalMutationSimulationMatchesTeachingExamples() throws {
         let response = try LocalExampleStore.loadHBBExample(bundle: Bundle(for: GeneDogmaViewModel.self))
         let missense = try simulateLocalMutation(codingDNA: response.sequences.codingDna, change: "20 A>T")
