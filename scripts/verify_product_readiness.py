@@ -18,6 +18,7 @@ SUPPORT_MD = ROOT / "docs" / "support.md"
 PRIVACY_MD = ROOT / "docs" / "privacy_policy.md"
 APP_STORE_READINESS = ROOT / "docs" / "app_store_readiness.md"
 APP_STORE_METADATA = ROOT / "docs" / "app_store_metadata.md"
+DEMO_SCRIPT = ROOT / "docs" / "demo_script.md"
 SCREENSHOTS = ROOT / "app_store" / "screenshots.md"
 REVIEW_NOTES = ROOT / "app_store" / "review_notes.txt"
 PRIVACY_ANSWERS = ROOT / "app_store" / "privacy_answers.md"
@@ -123,6 +124,25 @@ def verify_trust_and_scope(texts: dict[str, str]) -> None:
     require("make medical decisions" not in trust_bundle, "Product copy must not imply medical decision support.")
 
 
+def verify_demo_script(demo_script: str) -> None:
+    require_all(
+        demo_script,
+        [
+            "Two-Minute Walkthrough",
+            "built-in HBB example",
+            "central dogma path",
+            "compare two edits",
+            "missense",
+            "nonsense",
+            "teacher guide",
+            "Ensembl REST attribution",
+            "not clinical variant interpretation",
+            "python scripts/verify_product_readiness.py",
+        ],
+        "demo script",
+    )
+
+
 def verify_app_store_artifacts(texts: dict[str, str], ios_privacy: str) -> None:
     require_all(
         "\n".join(texts.values()),
@@ -178,6 +198,7 @@ def main() -> int:
             "privacy_policy.md": read(PRIVACY_MD),
             "app_store_readiness.md": read(APP_STORE_READINESS),
             "app_store_metadata.md": read(APP_STORE_METADATA),
+            "demo_script.md": read(DEMO_SCRIPT),
             "screenshots.md": read(SCREENSHOTS),
             "review_notes.txt": read(REVIEW_NOTES),
             "privacy_answers.md": read(PRIVACY_ANSWERS),
@@ -186,6 +207,7 @@ def main() -> int:
         verify_first_30_seconds(app, example)
         verify_learning_loop(app, ios)
         verify_trust_and_scope({**docs, "api.py": api})
+        verify_demo_script(docs["demo_script.md"])
         verify_app_store_artifacts(docs, ios_privacy)
         verify_api_contract(api)
         print("ok local product readiness")

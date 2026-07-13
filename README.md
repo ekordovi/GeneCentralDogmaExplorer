@@ -140,6 +140,9 @@ Release API URL points to the hosted backend:
 python scripts/verify_release_ready.py --live-lookup
 ```
 
+For a quick classroom, interview, or portfolio walkthrough, use
+`docs/demo_script.md`.
+
 ## Data Source
 
 Live lookups use Ensembl REST endpoints:

@@ -73,6 +73,8 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   - Mutation simulator shows silent/missense/nonsense/frameshift labels.
   - Text wraps cleanly on small iPhones.
 - Run `python scripts/verify_v1.py` before every demo.
+- Use `docs/demo_script.md` for a two-minute class, interview, or portfolio
+  walkthrough.
 - Run `python scripts/verify_ios_config.py` before TestFlight upload.
 - After replacing the Release API URL placeholder, run
   `python scripts/verify_release_ready.py --live-lookup` before TestFlight or
