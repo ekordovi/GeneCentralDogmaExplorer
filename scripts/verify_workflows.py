@@ -26,6 +26,7 @@ def main() -> int:
     require("curl " not in api_health, "API health workflow should not fall back to curl-only checks.")
 
     require("python scripts/verify_workflows.py" in ci, "CI must run workflow verification.")
+    require("python scripts/verify_product_readiness.py" in ci, "CI must run local product readiness verification.")
     print("ok workflow verification")
     return 0
 

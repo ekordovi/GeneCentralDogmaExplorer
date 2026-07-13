@@ -23,6 +23,8 @@ jobs:
         run: python scripts/verify_streamlit_ui.py
       - name: Verify App Store metadata
         run: python scripts/verify_app_store_metadata.py
+      - name: Verify product readiness package
+        run: python scripts/verify_product_readiness.py
       - name: Verify iOS API config
         run: python scripts/verify_ios_config.py
       - name: Verify GitHub workflows
