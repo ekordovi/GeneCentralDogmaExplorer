@@ -79,6 +79,15 @@ def sequence_preview(sequence: str, limit: int = 72) -> str:
     return f"{cleaned[:flank]} ... {cleaned[-flank:]}"
 
 
+def sequence_summary(sequence: str, unit: str = "symbols") -> str:
+    cleaned = _clean(sequence)
+    if not cleaned:
+        return f"0 {unit}; no sequence returned"
+    start = cleaned[:10]
+    end = cleaned[-10:]
+    return f"{len(cleaned):,} {unit}; starts {start}; ends {end}"
+
+
 def molecule_card(title: str, subtitle: str, sequence: str, molecule: str) -> str:
     length = len(_clean(sequence))
     return f"""
@@ -86,8 +95,8 @@ def molecule_card(title: str, subtitle: str, sequence: str, molecule: str) -> st
       <div class="molecule-title">{escape(title)}</div>
       <div class="molecule-subtitle">{escape(subtitle)}</div>
       <div class="molecule-length">{length:,} symbols</div>
-      <div class="sequence-text">{escape(sequence_preview(sequence))}</div>
-      {sequence_ribbon(sequence, molecule=molecule, limit=144)}
+      <div class="molecule-summary">{escape(sequence_summary(sequence))}</div>
+      {sequence_ribbon(sequence, molecule=molecule, limit=96)}
     </div>
     """
 
@@ -99,6 +108,7 @@ def dogma_stage_card(
     sequence: str,
     molecule: str,
     length_label: str,
+    change_label: str,
 ) -> str:
     return f"""
     <div class="dogma-stage">
@@ -109,9 +119,10 @@ def dogma_stage_card(
           <div class="dogma-stage-subtitle">{escape(subtitle)}</div>
         </div>
       </div>
+      <div class="dogma-stage-change">{escape(change_label)}</div>
       <div class="dogma-stage-meta">{escape(length_label)}</div>
-      <div class="dogma-stage-preview">{escape(sequence_preview(sequence, 64))}</div>
-      {sequence_ribbon(sequence, molecule=molecule, limit=72)}
+      <div class="dogma-stage-preview">{escape(sequence_summary(sequence, "symbols"))}</div>
+      {sequence_ribbon(sequence, molecule=molecule, limit=42)}
     </div>
     """
 
@@ -178,29 +189,44 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
       }}
       .dogma-flow-line {{
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
         margin-top: 16px;
         align-items: center;
       }}
       .dogma-flow-node {{
-        border-radius: 999px;
-        background: linear-gradient(90deg, #111827, #334155);
-        color: #ffffff;
-        font-size: 13px;
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #111827;
+        font-size: 12px;
         font-weight: 850;
         text-align: center;
-        padding: 8px 10px;
+        padding: 10px;
         position: relative;
       }}
       .dogma-flow-node:not(:last-child)::after {{
         content: "->";
         position: absolute;
-        right: -17px;
+        right: -19px;
         top: 50%;
         transform: translateY(-50%);
-        color: #111827;
+        color: #3a86ff;
         font-weight: 900;
+        z-index: 1;
+      }}
+      .dogma-flow-kicker {{
+        color: #3a86ff;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        margin-bottom: 3px;
+      }}
+      .dogma-flow-copy {{
+        color: #4b5563;
+        font-size: 12px;
+        font-weight: 650;
+        line-height: 1.25;
       }}
       .dogma-stage {{
         border: 1px solid #d8dee9;
@@ -253,6 +279,16 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         font-weight: 800;
         padding: 4px 8px;
       }}
+      .dogma-stage-change {{
+        border-left: 3px solid #3a86ff;
+        background: #f7fafc;
+        color: #374151;
+        font-size: 12px;
+        font-weight: 750;
+        line-height: 1.35;
+        padding: 7px 8px;
+        border-radius: 6px;
+      }}
       .dogma-stage-preview {{
         color: #374151;
         font-size: 12px;
@@ -294,6 +330,13 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         overflow-wrap: anywhere;
         word-break: break-word;
+      }}
+      .molecule-summary {{
+        margin-top: 9px;
+        color: #111827;
+        font-size: 12px;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
       }}
       .sequence-ribbon {{
         display: flex;
@@ -373,18 +416,29 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         </div>
       </div>
       <div class="dogma-flow-line">
-        <div class="dogma-flow-node">DNA stored</div>
-        <div class="dogma-flow-node">RNA copied</div>
-        <div class="dogma-flow-node">RNA processed</div>
-        <div class="dogma-flow-node">codons read</div>
-        <div class="dogma-flow-node">protein built</div>
+        <div class="dogma-flow-node">
+          <div class="dogma-flow-kicker">Transcription</div>
+          <div class="dogma-flow-copy">DNA letters are copied into RNA letters.</div>
+        </div>
+        <div class="dogma-flow-node">
+          <div class="dogma-flow-kicker">Splicing</div>
+          <div class="dogma-flow-copy">Transcript processing keeps the mature message.</div>
+        </div>
+        <div class="dogma-flow-node">
+          <div class="dogma-flow-kicker">Translation</div>
+          <div class="dogma-flow-copy">Codons are read three bases at a time.</div>
+        </div>
+        <div class="dogma-flow-node">
+          <div class="dogma-flow-kicker">Protein product</div>
+          <div class="dogma-flow-copy">The amino acid chain is the visible result.</div>
+        </div>
       </div>
       <div class="dogma-arrow-row">
-        {dogma_stage_card(1, "DNA", "Genomic sequence at the chromosome locus.", sequences.get("genomic_dna", ""), "dna", f"{genomic_len:,} bp")}
-        {dogma_stage_card(2, "pre-mRNA", "Teaching proxy: copied RNA before splicing.", sequences.get("pre_mrna_proxy", ""), "dna", f"{genomic_len:,} nt")}
-        {dogma_stage_card(3, "mRNA", "Spliced transcript sequence selected by Ensembl.", sequences.get("transcript_cdna", ""), "dna", f"{cdna_len:,} nt")}
-        {dogma_stage_card(4, "CDS", "Protein-coding region read in three-letter codons.", sequences.get("coding_dna", ""), "dna", f"{cds_len:,} bases")}
-        {dogma_stage_card(5, "Protein", "Amino acid product made from the codons.", sequences.get("protein", ""), "protein", f"{protein_len:,} aa")}
+        {dogma_stage_card(1, "DNA", "Genomic sequence at the chromosome locus.", sequences.get("genomic_dna", ""), "dna", f"{genomic_len:,} bp", "Source instruction")}
+        {dogma_stage_card(2, "pre-mRNA", "Teaching proxy: copied RNA before splicing.", sequences.get("pre_mrna_proxy", ""), "dna", f"{genomic_len:,} nt", "T becomes U")}
+        {dogma_stage_card(3, "mRNA", "Spliced transcript sequence selected by Ensembl.", sequences.get("transcript_cdna", ""), "dna", f"{cdna_len:,} nt", "Introns removed")}
+        {dogma_stage_card(4, "CDS", "Protein-coding region read in three-letter codons.", sequences.get("coding_dna", ""), "dna", f"{cds_len:,} bases", "Reading frame chosen")}
+        {dogma_stage_card(5, "Protein", "Amino acid product made from the codons.", sequences.get("protein", ""), "protein", f"{protein_len:,} aa", "Codons become amino acids")}
       </div>
       <div class="dogma-path-note">
         DNA is copied into RNA, transcript processing selects a spliced message, the CDS is read three bases at a time, and the returned protein sequence shows the amino acid product for the selected transcript.
