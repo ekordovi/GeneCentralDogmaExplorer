@@ -53,4 +53,27 @@ final class GeneCentralDogmaExplorerTests: XCTestCase {
         XCTAssertEqual(examples[1].codonChange, "GAG -> TAG")
         XCTAssertEqual(examples[1].aminoAcidChange, "E -> *")
     }
+
+    func testLocalMutationSimulationMatchesTeachingExamples() throws {
+        let response = try LocalExampleStore.loadHBBExample(bundle: Bundle(for: GeneDogmaViewModel.self))
+        let missense = try simulateLocalMutation(codingDNA: response.sequences.codingDna, change: "20 A>T")
+        let nonsense = try simulateLocalMutation(codingDNA: response.sequences.codingDna, change: "19 G>T")
+        let frameshift = try simulateLocalMutation(codingDNA: response.sequences.codingDna, change: "20del")
+        let insertion = try simulateLocalMutation(codingDNA: response.sequences.codingDna, change: "20insA")
+
+        XCTAssertEqual(missense.effect, "missense")
+        XCTAssertEqual(missense.originalCodon, "GAG")
+        XCTAssertEqual(missense.mutatedCodon, "GTG")
+        XCTAssertEqual(missense.originalAminoAcid, "E")
+        XCTAssertEqual(missense.mutatedAminoAcid, "V")
+        XCTAssertEqual(nonsense.effect, "nonsense")
+        XCTAssertEqual(nonsense.mutatedCodon, "TAG")
+        XCTAssertEqual(frameshift.effect, "frameshift")
+        XCTAssertEqual(insertion.effect, "frameshift")
+    }
+
+    func testLocalMutationSimulationRejectsReferenceMismatch() throws {
+        let response = try LocalExampleStore.loadHBBExample(bundle: Bundle(for: GeneDogmaViewModel.self))
+        XCTAssertThrowsError(try simulateLocalMutation(codingDNA: response.sequences.codingDna, change: "20 C>T"))
+    }
 }

@@ -171,7 +171,7 @@ final class GeneDogmaViewModel: ObservableObject {
         errorMessage = nil
         defer { isLoading = false }
         do {
-            mutationResult = try await client.simulateMutation(codingDNA: codingDNA, change: mutationText)
+            mutationResult = try simulateLocalMutation(codingDNA: codingDNA, change: mutationText)
         } catch {
             errorMessage = friendlyErrorMessage(error, context: "mutation")
         }
@@ -186,10 +186,8 @@ final class GeneDogmaViewModel: ObservableObject {
         errorMessage = nil
         defer { isLoading = false }
         do {
-            async let first = client.simulateMutation(codingDNA: codingDNA, change: comparisonMutationA)
-            async let second = client.simulateMutation(codingDNA: codingDNA, change: comparisonMutationB)
-            comparisonResultA = try await first
-            comparisonResultB = try await second
+            comparisonResultA = try simulateLocalMutation(codingDNA: codingDNA, change: comparisonMutationA)
+            comparisonResultB = try simulateLocalMutation(codingDNA: codingDNA, change: comparisonMutationB)
         } catch {
             errorMessage = friendlyErrorMessage(error, context: "mutation")
         }
@@ -351,6 +349,7 @@ func alternateBase(_ base: String) -> String {
 enum LocalMutationKind: Equatable {
     case substitution(alternate: String)
     case deletion
+    case insertion(alternate: String)
 }
 
 struct ParsedMutationChange: Equatable {
@@ -359,21 +358,44 @@ struct ParsedMutationChange: Equatable {
 }
 
 func parseSimpleMutationChange(_ change: String, codingDNA: String) -> ParsedMutationChange? {
-    let trimmed = change.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-    if trimmed.hasSuffix("DEL") {
-        let positionText = trimmed.dropLast(3)
+    let requested = change.trimmingCharacters(in: .whitespacesAndNewlines).uppercased().replacingOccurrences(of: " ", with: "")
+    if requested.isEmpty {
+        return nil
+    }
+
+    if let delRange = requested.range(of: "DEL") {
+        let positionText = requested[..<delRange.lowerBound]
         guard let position = Int(positionText), position >= 1, position <= codingDNA.count else { return nil }
+        let reference = String(requested[delRange.upperBound...])
+        if !reference.isEmpty, characterAt(codingDNA, oneBasedPosition: position) != reference {
+            return nil
+        }
         return ParsedMutationChange(position: position, kind: .deletion)
     }
 
-    let parts = trimmed.split(separator: " ")
-    guard parts.count == 2, let position = Int(parts[0]), position >= 1, position <= codingDNA.count else { return nil }
-    let baseChange = parts[1].split(separator: ">")
-    guard baseChange.count == 2 else { return nil }
-    let reference = String(baseChange[0])
-    let alternate = String(baseChange[1])
-    guard characterAt(codingDNA, oneBasedPosition: position) == reference else { return nil }
-    return ParsedMutationChange(position: position, kind: .substitution(alternate: alternate))
+    if let insRange = requested.range(of: "INS") {
+        let positionText = requested[..<insRange.lowerBound]
+        let alternate = String(requested[insRange.upperBound...])
+        guard let position = Int(positionText),
+              position >= 1,
+              position <= codingDNA.count,
+              !alternate.isEmpty,
+              alternate.allSatisfy({ "ACGT".contains($0) }) else { return nil }
+        return ParsedMutationChange(position: position, kind: .insertion(alternate: alternate))
+    }
+
+    let baseChange = requested.split(separator: ">")
+    guard baseChange.count == 2,
+          let referencePart = baseChange.first,
+          let alternatePart = baseChange.last,
+          let position = Int(referencePart.dropLast()),
+          let reference = referencePart.last,
+          position >= 1,
+          position <= codingDNA.count,
+          alternatePart.count == 1,
+          alternatePart.allSatisfy({ "ACGT".contains($0) }) else { return nil }
+    guard characterAt(codingDNA, oneBasedPosition: position) == String(reference) else { return nil }
+    return ParsedMutationChange(position: position, kind: .substitution(alternate: String(alternatePart)))
 }
 
 func mutationEffectForSubstitution(_ codingDNA: String, change: String) -> String? {
@@ -392,8 +414,95 @@ func mutationEffectForSubstitution(_ codingDNA: String, change: String) -> Strin
     return originalAA == mutatedAA ? "silent" : "missense"
 }
 
-func substring(_ sequence: String, zeroBasedStart: Int, length: Int) -> String {
-    guard zeroBasedStart >= 0, length > 0, zeroBasedStart + length <= sequence.count else { return "NA" }
+enum LocalMutationError: LocalizedError {
+    case noCodingDNA
+    case emptyChange
+    case invalidFormat
+    case invalidPosition(max: Int)
+    case referenceMismatch(position: Int, expected: String)
+
+    var errorDescription: String? {
+        switch self {
+        case .noCodingDNA:
+            return "No coding DNA sequence is available for mutation simulation."
+        case .emptyChange:
+            return "Enter a mutation such as 20 A>T, 20del, or 20insA."
+        case .invalidFormat:
+            return "Use a simple format like 20 A>T, 20del, or 20insA."
+        case .invalidPosition(let max):
+            return "Position must be between 1 and \(max.formatted())."
+        case .referenceMismatch(let position, let expected):
+            return "Reference base mismatch at \(position): expected \(expected)."
+        }
+    }
+}
+
+func simulateLocalMutation(codingDNA: String, change: String) throws -> MutationResult {
+    let cleaned = cleanDNA(codingDNA)
+    let requested = change.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !cleaned.isEmpty else { throw LocalMutationError.noCodingDNA }
+    guard !requested.isEmpty else { throw LocalMutationError.emptyChange }
+    guard let parsed = parseSimpleMutationChange(requested, codingDNA: cleaned) else {
+        if let position = leadingInteger(in: requested), position < 1 || position > cleaned.count {
+            throw LocalMutationError.invalidPosition(max: cleaned.count)
+        }
+        if let mismatch = substitutionReferenceMismatch(requested, codingDNA: cleaned) {
+            throw LocalMutationError.referenceMismatch(position: mismatch.position, expected: mismatch.expected)
+        }
+        throw LocalMutationError.invalidFormat
+    }
+
+    let zeroIndex = parsed.position - 1
+    let actualBase = characterAt(cleaned, oneBasedPosition: parsed.position)
+    let mutationType: String
+    let mutatedDNA: String
+
+    switch parsed.kind {
+    case .substitution(let alternate):
+        mutationType = "substitution"
+        mutatedDNA = replacingCharacter(cleaned, oneBasedPosition: parsed.position, with: alternate)
+    case .deletion:
+        mutationType = "deletion"
+        mutatedDNA = deletingCharacter(cleaned, oneBasedPosition: parsed.position)
+    case .insertion(let alternate):
+        mutationType = "insertion"
+        mutatedDNA = insertingString(cleaned, afterOneBasedPosition: parsed.position, insertion: alternate)
+    }
+
+    let codonIndex = zeroIndex / 3
+    let codonStart = codonIndex * 3
+    let originalCodon = substring(cleaned, zeroBasedStart: codonStart, length: 3, fallback: "")
+    let mutatedCodon = substring(mutatedDNA, zeroBasedStart: codonStart, length: 3, fallback: "")
+    let originalAA = originalCodon.count == 3 ? translateCodon(originalCodon) : ""
+    let mutatedAA = mutatedCodon.count == 3 ? translateCodon(mutatedCodon) : ""
+    let effect: String
+    if mutatedDNA.count % 3 != cleaned.count % 3 {
+        effect = "frameshift"
+    } else if mutatedAA == "*" {
+        effect = "nonsense"
+    } else if originalAA == mutatedAA {
+        effect = "silent"
+    } else {
+        effect = "missense"
+    }
+
+    return MutationResult(
+        input: change,
+        mutationType: mutationType,
+        position: parsed.position,
+        codonNumber: codonIndex + 1,
+        originalBase: actualBase,
+        originalCodon: originalCodon,
+        mutatedCodon: mutatedCodon,
+        originalAminoAcid: originalAA,
+        mutatedAminoAcid: mutatedAA,
+        effect: effect,
+        mutatedDna: mutatedDNA
+    )
+}
+
+func substring(_ sequence: String, zeroBasedStart: Int, length: Int, fallback: String = "NA") -> String {
+    guard zeroBasedStart >= 0, length > 0, zeroBasedStart + length <= sequence.count else { return fallback }
     let start = sequence.index(sequence.startIndex, offsetBy: zeroBasedStart)
     let end = sequence.index(start, offsetBy: length)
     return String(sequence[start..<end])
@@ -411,6 +520,31 @@ func deletingCharacter(_ sequence: String, oneBasedPosition: Int) -> String {
     guard oneBasedPosition >= 1, oneBasedPosition <= characters.count else { return sequence }
     characters.remove(at: oneBasedPosition - 1)
     return String(characters)
+}
+
+func insertingString(_ sequence: String, afterOneBasedPosition position: Int, insertion: String) -> String {
+    var characters = Array(sequence)
+    guard position >= 1, position <= characters.count else { return sequence }
+    characters.insert(contentsOf: Array(insertion), at: position)
+    return String(characters)
+}
+
+func leadingInteger(in value: String) -> Int? {
+    let digits = value.trimmingCharacters(in: .whitespacesAndNewlines).prefix { $0.isNumber }
+    return digits.isEmpty ? nil : Int(digits)
+}
+
+func substitutionReferenceMismatch(_ change: String, codingDNA: String) -> (position: Int, expected: String)? {
+    let requested = change.trimmingCharacters(in: .whitespacesAndNewlines).uppercased().replacingOccurrences(of: " ", with: "")
+    let baseChange = requested.split(separator: ">")
+    guard baseChange.count == 2,
+          let referencePart = baseChange.first,
+          let position = Int(referencePart.dropLast()),
+          let reference = referencePart.last,
+          position >= 1,
+          position <= codingDNA.count else { return nil }
+    let expected = characterAt(codingDNA, oneBasedPosition: position)
+    return expected == String(reference) ? nil : (position, expected)
 }
 
 func translateCodon(_ codon: String) -> String {

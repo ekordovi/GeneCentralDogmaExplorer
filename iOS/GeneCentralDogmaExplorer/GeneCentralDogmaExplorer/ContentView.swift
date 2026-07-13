@@ -776,6 +776,8 @@ func mutationLessonExample(codingDNA: String, title: String, change: String, eff
         mutatedDNA = replacingCharacter(cleaned, oneBasedPosition: parsed.position, with: alternate)
     case .deletion:
         mutatedDNA = deletingCharacter(cleaned, oneBasedPosition: parsed.position)
+    case .insertion(let alternate):
+        mutatedDNA = insertingString(cleaned, afterOneBasedPosition: parsed.position, insertion: alternate)
     }
 
     let mutatedCodon = originalCodonStart + 3 <= mutatedDNA.count ? substring(mutatedDNA, zeroBasedStart: originalCodonStart, length: 3) : "NA"

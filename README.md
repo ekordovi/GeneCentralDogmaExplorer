@@ -88,8 +88,8 @@ uvicorn api:app --reload
 ```
 
 Then run the `GeneCentralDogmaExplorer` scheme in Xcode on an iPhone simulator.
-The bundled HBB demo works offline. Live lookup and mutation calls use
-the Debug `GENE_DOGMA_API_BASE_URL` build setting, currently
+The bundled HBB demo and simple iOS mutation practice work offline. Live gene
+lookup uses the Debug `GENE_DOGMA_API_BASE_URL` build setting, currently
 `http://127.0.0.1:8000`, which maps from the iOS simulator back to your Mac.
 
 Before App Store upload:
