@@ -94,6 +94,60 @@ let famousGeneExamples: [FamousGeneExample] = [
     FamousGeneExample(symbol: "APOE", name: "Lipid transport", why: "Lipid-transport gene with memorable common protein variants."),
 ]
 
+struct DemoLaunchConfiguration: Equatable {
+    var initialTab = 0
+    var shouldPrimeMutationComparison = false
+    var savedGenes: [String] = []
+
+    init(arguments: [String] = ProcessInfo.processInfo.arguments) {
+        for argument in arguments {
+            if let tabName = argument.value(afterPrefix: "--gene-demo-tab=") ?? argument.value(afterPrefix: "--screenshot-tab="),
+               let tab = DemoLaunchConfiguration.tabIndex(for: tabName) {
+                initialTab = tab
+            }
+            if argument == "--gene-demo-compare" || argument == "--screenshot-compare" {
+                shouldPrimeMutationComparison = true
+            }
+            if argument == "--gene-demo-saved" || argument == "--screenshot-saved" {
+                savedGenes = ["HBB", "BRCA1", "TP53"]
+            }
+            if argument == "--gene-demo=screenshots" {
+                savedGenes = ["HBB", "BRCA1", "TP53"]
+                shouldPrimeMutationComparison = true
+            }
+        }
+    }
+
+    var shouldApply: Bool {
+        shouldPrimeMutationComparison || !savedGenes.isEmpty
+    }
+
+    static func tabIndex(for value: String) -> Int? {
+        switch value.lowercased() {
+        case "search", "start", "hbb":
+            return 0
+        case "explore", "dogma":
+            return 1
+        case "mutation", "compare":
+            return 2
+        case "quiz", "study":
+            return 3
+        case "saved":
+            return 4
+        case "about", "privacy":
+            return 5
+        default:
+            return nil
+        }
+    }
+}
+
+private extension String {
+    func value(afterPrefix prefix: String) -> String? {
+        hasPrefix(prefix) ? String(dropFirst(prefix.count)) : nil
+    }
+}
+
 enum LocalExampleStore {
     static func loadHBBExample(bundle: Bundle = .main) throws -> GeneDogmaResponse {
         guard let url = bundle.url(forResource: "example_gene_cache", withExtension: "json") else {
@@ -212,6 +266,21 @@ final class GeneDogmaViewModel: ObservableObject {
             loadBundledExample()
         } else {
             await lookupGene()
+        }
+    }
+
+    func applyDemoConfiguration(_ configuration: DemoLaunchConfiguration) {
+        guard configuration.shouldApply else { return }
+        if !configuration.savedGenes.isEmpty {
+            savedGenes = configuration.savedGenes
+        }
+        if configuration.shouldPrimeMutationComparison {
+            loadBundledExample()
+            guard let codingDNA = response?.sequences.codingDna, !codingDNA.isEmpty else { return }
+            applyMutationExamples()
+            mutationResult = try? simulateLocalMutation(codingDNA: codingDNA, change: mutationText)
+            comparisonResultA = try? simulateLocalMutation(codingDNA: codingDNA, change: comparisonMutationA)
+            comparisonResultB = try? simulateLocalMutation(codingDNA: codingDNA, change: comparisonMutationB)
         }
     }
 

@@ -76,4 +76,25 @@ final class GeneCentralDogmaExplorerTests: XCTestCase {
         let response = try LocalExampleStore.loadHBBExample(bundle: Bundle(for: GeneDogmaViewModel.self))
         XCTAssertThrowsError(try simulateLocalMutation(codingDNA: response.sequences.codingDna, change: "20 C>T"))
     }
+
+    func testDemoLaunchConfigurationParsesScreenshotTabs() throws {
+        XCTAssertEqual(DemoLaunchConfiguration(arguments: ["app", "--gene-demo-tab=explore"]).initialTab, 1)
+        XCTAssertEqual(DemoLaunchConfiguration(arguments: ["app", "--screenshot-tab=mutation"]).initialTab, 2)
+        XCTAssertEqual(DemoLaunchConfiguration(arguments: ["app", "--gene-demo-tab=study"]).initialTab, 3)
+        XCTAssertEqual(DemoLaunchConfiguration(arguments: ["app", "--gene-demo-tab=saved"]).initialTab, 4)
+        XCTAssertEqual(DemoLaunchConfiguration(arguments: ["app", "--gene-demo-tab=about"]).initialTab, 5)
+    }
+
+    @MainActor
+    func testDemoConfigurationPrimesScreenshotState() throws {
+        let viewModel = GeneDogmaViewModel()
+        viewModel.applyDemoConfiguration(
+            DemoLaunchConfiguration(arguments: ["app", "--gene-demo=screenshots", "--gene-demo-tab=mutation"])
+        )
+
+        XCTAssertEqual(viewModel.savedGenes, ["HBB", "BRCA1", "TP53"])
+        XCTAssertEqual(viewModel.mutationResult?.effect, "missense")
+        XCTAssertEqual(viewModel.comparisonResultA?.effect, "missense")
+        XCTAssertEqual(viewModel.comparisonResultB?.effect, "nonsense")
+    }
 }

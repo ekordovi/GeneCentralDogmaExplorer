@@ -2,7 +2,14 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = GeneDogmaViewModel()
-    @State private var selectedTab = 0
+    @State private var selectedTab: Int
+    @State private var didApplyDemoConfiguration = false
+    private let demoConfiguration: DemoLaunchConfiguration
+
+    init(demoConfiguration: DemoLaunchConfiguration = DemoLaunchConfiguration()) {
+        self.demoConfiguration = demoConfiguration
+        _selectedTab = State(initialValue: demoConfiguration.initialTab)
+    }
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -29,6 +36,11 @@ struct ContentView: View {
             AboutScreen()
                 .tabItem { Label("About", systemImage: "info.circle") }
                 .tag(5)
+        }
+        .onAppear {
+            guard !didApplyDemoConfiguration else { return }
+            didApplyDemoConfiguration = true
+            viewModel.applyDemoConfiguration(demoConfiguration)
         }
     }
 }

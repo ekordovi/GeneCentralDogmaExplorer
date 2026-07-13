@@ -85,6 +85,10 @@ API URL is configured:
 - Study mode or saved genes showing why a student or teacher would come back.
 - About screen showing the educational disclaimer and privacy posture.
 
+Use `app_store/screenshots.md` for the exact screenshot captions and optional
+Xcode launch arguments, such as `--gene-demo-tab=mutation --gene-demo-compare`,
+that prime repeatable local demo states for screenshot capture.
+
 ## App Store Listing Draft
 
 - Subtitle: Learn genes from DNA to RNA to protein.
