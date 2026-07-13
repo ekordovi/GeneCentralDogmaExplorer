@@ -1,6 +1,9 @@
 import unittest
+from io import BytesIO
+from unittest.mock import patch
+from urllib.error import HTTPError
 
-from gene_dogma.ensembl_client import choose_transcript, fetch_gene_central_dogma
+from gene_dogma.ensembl_client import EnsemblClient, EnsemblError, choose_transcript, fetch_gene_central_dogma
 
 
 class FakeClient:
@@ -75,6 +78,30 @@ class EnsemblClientTests(unittest.TestCase):
         self.assertEqual(result["sequences"]["coding_mrna"], "AUGGAGUAA")
         self.assertEqual(result["sequences"]["protein"], "ME")
         self.assertEqual(result["summaries"]["coding_dna"]["length"], 9)
+
+    def test_ensembl_404_becomes_lookup_error(self):
+        error = HTTPError(
+            url="https://rest.ensembl.org/lookup/symbol/homo_sapiens/NOPE",
+            code=404,
+            msg="Not Found",
+            hdrs=None,
+            fp=BytesIO(b'{"error":"No valid lookup found"}'),
+        )
+        with patch("gene_dogma.ensembl_client.urlopen", side_effect=error):
+            with self.assertRaises(LookupError):
+                EnsemblClient().lookup_symbol("homo_sapiens", "NOPE")
+
+    def test_ensembl_server_error_stays_service_error(self):
+        error = HTTPError(
+            url="https://rest.ensembl.org/lookup/symbol/homo_sapiens/HBB",
+            code=500,
+            msg="Server Error",
+            hdrs=None,
+            fp=BytesIO(b"temporary outage"),
+        )
+        with patch("gene_dogma.ensembl_client.urlopen", side_effect=error):
+            with self.assertRaises(EnsemblError):
+                EnsemblClient().lookup_symbol("homo_sapiens", "HBB")
 
 
 if __name__ == "__main__":

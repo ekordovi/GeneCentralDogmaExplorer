@@ -37,6 +37,8 @@ class EnsemblClient:
                 return response.read().decode("utf-8").strip()
         except HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")[:300]
+            if exc.code == 404:
+                raise LookupError("Ensembl resource not found.") from exc
             raise EnsemblError(f"Ensembl request failed: {exc.code} {body}") from exc
         except URLError as exc:
             raise EnsemblError(f"Could not reach Ensembl REST: {exc.reason}") from exc
@@ -80,7 +82,7 @@ def _safe_sequence(client: EnsemblClient, stable_id: str | None, sequence_type: 
         return ""
     try:
         return client.sequence(stable_id, sequence_type)
-    except EnsemblError:
+    except (EnsemblError, LookupError):
         return ""
 
 

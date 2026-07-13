@@ -66,6 +66,20 @@ def rendered_ui_text(app: AppTest) -> str:
 
 def main() -> int:
     try:
+        app_source = (PROJECT_ROOT / "app.py").read_text(encoding="utf-8")
+        require(
+            "We couldn't find that gene symbol for this species" in app_source,
+            "Streamlit lookup failures must use learner-friendly not-found copy.",
+        )
+        require(
+            "That edit does not match the selected coding DNA" in app_source,
+            "Streamlit mutation failures must avoid raw reference-mismatch detail.",
+        )
+        require(
+            'st.session_state.get("learning_mode") == "Advanced"' in app_source,
+            "Technical exception details should stay behind Advanced mode.",
+        )
+
         app = AppTest.from_file(str(PROJECT_ROOT / "app.py"))
         app.run(timeout=30)
 

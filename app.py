@@ -715,7 +715,7 @@ def friendly_error_message(exc: Exception, context: str = "lookup") -> str:
     text = str(exc)
     if context == "mutation":
         if "Reference base mismatch" in text:
-            return f"That edit does not match this coding DNA. {text}"
+            return "That edit does not match the selected coding DNA. Try one of the suggested examples for this gene."
         if "Position must be" in text:
             return text
         return "Try a simple coding-DNA edit like 20 A>T, 20del, or 20insA."
@@ -724,6 +724,8 @@ def friendly_error_message(exc: Exception, context: str = "lookup") -> str:
             "I could not load that live Ensembl gene right now. Try HBB, BRCA1, or TP53, "
             "or use the built-in HBB demo while the live lookup catches up."
         )
+    if isinstance(exc, LookupError):
+        return "We couldn't find that gene symbol for this species. Try checking the spelling or selecting another species."
     return "Something went sideways while loading this gene. Try another symbol or reload the built-in HBB demo."
 
 
@@ -732,8 +734,9 @@ def show_friendly_error(exc: Exception, context: str = "lookup") -> None:
         f'<div class="friendly-error">{escape_html(friendly_error_message(exc, context))}</div>',
         unsafe_allow_html=True,
     )
-    with st.expander("Technical detail"):
-        st.code(str(exc), language="text")
+    if st.session_state.get("learning_mode") == "Advanced":
+        with st.expander("Technical detail"):
+            st.code(str(exc), language="text")
 
 
 def short_sequence(sequence: str, flank: int = 240) -> str:
