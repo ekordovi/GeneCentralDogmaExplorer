@@ -37,10 +37,10 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 - Update the Release `GENE_DOGMA_API_BASE_URL` iOS build setting with the
   deployed HTTPS base URL. `Info.plist` reads `GeneDogmaAPIBaseURL` from that
   build setting.
-- Add a simple uptime check for `/api/health` before TestFlight. A daily GitHub
-  Actions curl or provider health check is enough for v1. This repo includes
-  `.github/workflows/api-health.yml`; set `GENE_DOGMA_API_HEALTH_URL` after the
-  backend is deployed.
+- Add an uptime/API contract check before TestFlight. This repo includes
+  `.github/workflows/api-health.yml`; set `GENE_DOGMA_API_BASE_URL` after the
+  backend is deployed so the workflow verifies health, info, example data,
+  famous examples, and mutation behavior.
 
 ## Native App Requirements
 

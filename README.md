@@ -106,7 +106,7 @@ Before App Store upload:
   and privacy pages. GitHub Pages is configured at
   `https://ekordovi.github.io/GeneCentralDogmaExplorer/`.
 - Follow `docs/deployment.md` for backend hosting, iOS production URL setup,
-  and the optional GitHub Actions uptime check.
+  and the optional GitHub Actions API contract check.
 - See `docs/app_store_readiness.md`.
 
 ## Test

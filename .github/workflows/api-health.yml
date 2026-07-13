@@ -9,13 +9,39 @@ jobs:
   api-health:
     runs-on: ubuntu-latest
     env:
+      API_BASE_URL: ${{ vars.GENE_DOGMA_API_BASE_URL }}
       HEALTH_URL: ${{ vars.GENE_DOGMA_API_HEALTH_URL }}
     steps:
-      - name: Check configured API health endpoint
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Resolve configured API base URL
+        id: api
         run: |
-          if [ -z "$HEALTH_URL" ]; then
-            echo "::notice title=API health check skipped::Set the GENE_DOGMA_API_HEALTH_URL repository variable to your deployed /api/health URL."
+          if [ -n "$API_BASE_URL" ]; then
+            echo "base_url=${API_BASE_URL%/}" >> "$GITHUB_OUTPUT"
+            echo "configured=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          curl --fail --silent --show-error --max-time 20 "$HEALTH_URL"
+          if [ -n "$HEALTH_URL" ]; then
+            case "$HEALTH_URL" in
+              */api/health)
+                echo "base_url=${HEALTH_URL%/api/health}" >> "$GITHUB_OUTPUT"
+                echo "configured=true" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+              *)
+                echo "::error title=Invalid API health URL::GENE_DOGMA_API_HEALTH_URL must end with /api/health or set GENE_DOGMA_API_BASE_URL instead."
+                exit 1
+                ;;
+            esac
+          fi
+
+          echo "::notice title=API health check skipped::Set GENE_DOGMA_API_BASE_URL to your deployed API base URL, or set GENE_DOGMA_API_HEALTH_URL to your deployed /api/health URL."
+          echo "configured=false" >> "$GITHUB_OUTPUT"
+      - name: Verify deployed API contract
+        if: steps.api.outputs.configured == 'true'
+        run: |
+          python scripts/verify_v1.py --base-url "${{ steps.api.outputs.base_url }}"

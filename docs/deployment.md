@@ -61,16 +61,20 @@ The bundled HBB example still works offline if the live backend is down.
 ## Uptime Check
 
 The workflow `.github/workflows/api-health.yml` can check the deployed backend
-daily.
+daily. It runs `scripts/verify_v1.py --base-url`, so it verifies `/api/health`,
+`/api/info`, the bundled HBB example, famous examples, and mutation behavior,
+not just that a URL responds.
 
 After the backend is deployed, add this GitHub repository variable:
 
 ```text
-GENE_DOGMA_API_HEALTH_URL=https://your-api-host.example/api/health
+GENE_DOGMA_API_BASE_URL=https://your-api-host.example
 ```
 
-Then run the `API Health` workflow manually once. If the URL is not configured,
-the workflow exits successfully with a notice instead of failing the repo.
+The older `GENE_DOGMA_API_HEALTH_URL=https://your-api-host.example/api/health`
+variable is still accepted for compatibility. Then run the `API Health`
+workflow manually once. If neither URL is configured, the workflow exits
+successfully with a notice instead of failing the repo.
 
 ## Public Support Pages
 
