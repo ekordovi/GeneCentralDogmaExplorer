@@ -23,6 +23,9 @@ REQUIRED_BUTTONS = (
 REQUIRED_COPY = (
     "Start with a real gene story",
     "HBB",
+    "Tap a gene card to inspect it",
+    "Tap a central dogma step",
+    "Chromosome location",
     "Two-minute mutation lesson",
     "Missense",
     "Nonsense",
@@ -38,8 +41,22 @@ def require(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
-def rendered_markdown_text(app: AppTest) -> str:
-    return "\n".join(str(getattr(item, "value", "")) for item in app.markdown)
+def rendered_ui_text(app: AppTest) -> str:
+    pieces: list[str] = []
+    for collection_name in (
+        "title",
+        "header",
+        "subheader",
+        "caption",
+        "markdown",
+        "button",
+        "segmented_control",
+        "selectbox",
+    ):
+        for item in getattr(app, collection_name):
+            pieces.append(str(getattr(item, "value", "")))
+            pieces.append(str(getattr(item, "label", "")))
+    return "\n".join(pieces)
 
 
 def main() -> int:
@@ -53,7 +70,7 @@ def main() -> int:
         for label in REQUIRED_BUTTONS:
             require(label in buttons, f"Missing guided first-screen button: {label}")
 
-        text = rendered_markdown_text(app)
+        text = rendered_ui_text(app)
         for phrase in REQUIRED_COPY:
             require(phrase in text, f"Missing Streamlit learning copy: {phrase}")
 

@@ -92,6 +92,30 @@ def molecule_card(title: str, subtitle: str, sequence: str, molecule: str) -> st
     """
 
 
+def dogma_stage_card(
+    number: int,
+    title: str,
+    subtitle: str,
+    sequence: str,
+    molecule: str,
+    length_label: str,
+) -> str:
+    return f"""
+    <div class="dogma-stage">
+      <div class="dogma-stage-top">
+        <div class="dogma-stage-number">{number}</div>
+        <div>
+          <div class="dogma-stage-title">{escape(title)}</div>
+          <div class="dogma-stage-subtitle">{escape(subtitle)}</div>
+        </div>
+      </div>
+      <div class="dogma-stage-meta">{escape(length_label)}</div>
+      <div class="dogma-stage-preview">{escape(sequence_preview(sequence, 64))}</div>
+      {sequence_ribbon(sequence, molecule=molecule, limit=72)}
+    </div>
+    """
+
+
 def dogma_visual_html(data: dict[str, Any]) -> str:
     gene = data["gene"]
     sequences = data["sequences"]
@@ -147,10 +171,10 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
       }}
       .dogma-arrow-row {{
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+        gap: 12px;
         align-items: stretch;
-        margin-top: 16px;
+        margin-top: 14px;
       }}
       .dogma-flow-line {{
         display: grid;
@@ -161,7 +185,7 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
       }}
       .dogma-flow-node {{
         border-radius: 999px;
-        background: #111827;
+        background: linear-gradient(90deg, #111827, #334155);
         color: #ffffff;
         font-size: 13px;
         font-weight: 850;
@@ -178,29 +202,49 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         color: #111827;
         font-weight: 900;
       }}
-      .dogma-step {{
+      .dogma-stage {{
         border: 1px solid #d8dee9;
         border-radius: 8px;
-        padding: 12px;
+        padding: 13px;
         background: #ffffff;
-        min-height: 126px;
         min-width: 0;
-        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
       }}
-      .dogma-step strong {{
-        display: block;
-        font-size: 15px;
-        color: #111827;
+      .dogma-stage-top {{
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
       }}
-      .dogma-step span {{
-        display: block;
-        margin-top: 7px;
-        color: #4b5563;
+      .dogma-stage-number {{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        background: #111827;
+        color: #ffffff;
+        font-weight: 850;
         font-size: 13px;
       }}
-      .dogma-step-meta {{
+      .dogma-stage-title {{
+        color: #111827;
+        font-size: 15px;
+        font-weight: 850;
+        line-height: 1.2;
+      }}
+      .dogma-stage-subtitle {{
+        color: #4b5563;
+        font-size: 13px;
+        line-height: 1.35;
+        margin-top: 3px;
+      }}
+      .dogma-stage-meta {{
         display: inline-flex;
-        margin-top: 10px;
+        align-self: flex-start;
         border-radius: 999px;
         background: #f7fafc;
         border: 1px solid #d8dee9;
@@ -209,12 +253,13 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         font-weight: 800;
         padding: 4px 8px;
       }}
-      .dogma-step-preview {{
-        margin-top: 8px;
+      .dogma-stage-preview {{
         color: #374151;
-        font-size: 11px;
+        font-size: 12px;
+        line-height: 1.45;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         overflow-wrap: anywhere;
+        word-break: break-word;
       }}
       .dogma-path-note {{
         margin-top: 12px;
@@ -262,11 +307,11 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 15px;
-        height: 17px;
+        min-width: 17px;
+        height: 19px;
         border-radius: 4px;
         color: #ffffff;
-        font-size: 9px;
+        font-size: 10px;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-weight: 700;
       }}
@@ -275,8 +320,11 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         font-size: 13px;
       }}
       @media (max-width: 900px) {{
-        .gene-hero, .dogma-arrow-row, .dogma-flow-line, .molecule-grid {{
+        .gene-hero, .dogma-flow-line, .molecule-grid {{
           grid-template-columns: 1fr;
+        }}
+        .dogma-arrow-row {{
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         }}
         .dogma-flow-node:not(:last-child)::after {{
           content: "↓";
@@ -291,19 +339,21 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         .dogma-wrap {{
           padding: 12px;
         }}
-        .gene-card, .molecule-card, .dogma-step {{
+        .gene-card, .molecule-card, .dogma-stage {{
           padding: 11px;
         }}
         .gene-name {{
           font-size: 28px;
         }}
-        .dogma-step {{
-          min-height: auto;
-        }}
         .sequence-ribbon span {{
-          width: 14px;
-          height: 16px;
-          font-size: 8px;
+          min-width: 16px;
+          height: 18px;
+          font-size: 9px;
+        }}
+      }}
+      @media (max-width: 560px) {{
+        .dogma-arrow-row {{
+          grid-template-columns: 1fr;
         }}
       }}
     </style>
@@ -323,18 +373,18 @@ def dogma_visual_html(data: dict[str, Any]) -> str:
         </div>
       </div>
       <div class="dogma-flow-line">
-        <div class="dogma-flow-node">DNA</div>
-        <div class="dogma-flow-node">pre-mRNA</div>
-        <div class="dogma-flow-node">spliced mRNA</div>
-        <div class="dogma-flow-node">CDS codons</div>
-        <div class="dogma-flow-node">protein</div>
+        <div class="dogma-flow-node">DNA stored</div>
+        <div class="dogma-flow-node">RNA copied</div>
+        <div class="dogma-flow-node">RNA processed</div>
+        <div class="dogma-flow-node">codons read</div>
+        <div class="dogma-flow-node">protein built</div>
       </div>
       <div class="dogma-arrow-row">
-        <div class="dogma-step"><strong>1. DNA</strong><span>Genomic sequence at the gene locus.</span><div class="dogma-step-meta">{genomic_len:,} bp</div><div class="dogma-step-preview">{escape(sequence_preview(sequences.get("genomic_dna", ""), 44))}</div></div>
-        <div class="dogma-step"><strong>2. pre-mRNA</strong><span>Teaching proxy: DNA with U instead of T.</span><div class="dogma-step-meta">{genomic_len:,} nt</div><div class="dogma-step-preview">{escape(sequence_preview(sequences.get("pre_mrna_proxy", ""), 44))}</div></div>
-        <div class="dogma-step"><strong>3. mRNA</strong><span>Spliced transcript sequence.</span><div class="dogma-step-meta">{cdna_len:,} nt</div><div class="dogma-step-preview">{escape(sequence_preview(sequences.get("transcript_cdna", ""), 44))}</div></div>
-        <div class="dogma-step"><strong>4. CDS</strong><span>Protein-coding part read in codons.</span><div class="dogma-step-meta">{cds_len:,} bases</div><div class="dogma-step-preview">{escape(sequence_preview(sequences.get("coding_dna", ""), 44))}</div></div>
-        <div class="dogma-step"><strong>5. Protein</strong><span>Amino acid product when translated.</span><div class="dogma-step-meta">{protein_len:,} aa</div><div class="dogma-step-preview">{escape(sequence_preview(sequences.get("protein", ""), 44))}</div></div>
+        {dogma_stage_card(1, "DNA", "Genomic sequence at the chromosome locus.", sequences.get("genomic_dna", ""), "dna", f"{genomic_len:,} bp")}
+        {dogma_stage_card(2, "pre-mRNA", "Teaching proxy: copied RNA before splicing.", sequences.get("pre_mrna_proxy", ""), "dna", f"{genomic_len:,} nt")}
+        {dogma_stage_card(3, "mRNA", "Spliced transcript sequence selected by Ensembl.", sequences.get("transcript_cdna", ""), "dna", f"{cdna_len:,} nt")}
+        {dogma_stage_card(4, "CDS", "Protein-coding region read in three-letter codons.", sequences.get("coding_dna", ""), "dna", f"{cds_len:,} bases")}
+        {dogma_stage_card(5, "Protein", "Amino acid product made from the codons.", sequences.get("protein", ""), "protein", f"{protein_len:,} aa")}
       </div>
       <div class="dogma-path-note">
         DNA is copied into RNA, transcript processing selects a spliced message, the CDS is read three bases at a time, and the returned protein sequence shows the amino acid product for the selected transcript.

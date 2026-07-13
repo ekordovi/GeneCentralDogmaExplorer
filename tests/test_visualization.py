@@ -34,6 +34,10 @@ class VisualizationTests(unittest.TestCase):
         self.assertIn("TEST", html)
         self.assertIn("Genomic DNA", html)
         self.assertIn("Protein product", html)
+        self.assertIn("dogma-stage", html)
+        self.assertIn("DNA stored", html)
+        self.assertIn("protein built", html)
+        self.assertIn("Amino acid product made from the codons", html)
 
 
 if __name__ == "__main__":
