@@ -143,6 +143,9 @@ python scripts/verify_release_ready.py --live-lookup
 For a quick classroom, interview, or portfolio walkthrough, use
 `docs/demo_script.md`.
 
+For the v1 product strategy, distribution plan, cost assumptions, and remaining
+App Store blockers, use `docs/business_plan.md`.
+
 ## Data Source
 
 Live lookups use Ensembl REST endpoints:

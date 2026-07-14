@@ -1,5 +1,8 @@
 # App Store Readiness Checklist
 
+See `docs/business_plan.md` for the v1 positioning, distribution plan, backend
+cost assumptions, success criteria, and remaining App Store blockers.
+
 ## Manual Prerequisites
 
 - Install full Xcode from the Mac App Store.

@@ -18,6 +18,7 @@ SUPPORT_MD = ROOT / "docs" / "support.md"
 PRIVACY_MD = ROOT / "docs" / "privacy_policy.md"
 APP_STORE_READINESS = ROOT / "docs" / "app_store_readiness.md"
 APP_STORE_METADATA = ROOT / "docs" / "app_store_metadata.md"
+BUSINESS_PLAN = ROOT / "docs" / "business_plan.md"
 DEMO_SCRIPT = ROOT / "docs" / "demo_script.md"
 SCREENSHOTS = ROOT / "app_store" / "screenshots.md"
 REVIEW_NOTES = ROOT / "app_store" / "review_notes.txt"
@@ -184,6 +185,28 @@ def verify_demo_script(demo_script: str) -> None:
     )
 
 
+def verify_business_plan(business_plan: str) -> None:
+    require_all(
+        business_plan,
+        [
+            "Business Plan",
+            "Positioning",
+            "First 30 Seconds",
+            "Version 1 Scope",
+            "Trust Package",
+            "Distribution Plan",
+            "Backend Cost Plan",
+            "Success Criteria",
+            "Current Blocking Items Before App Store",
+            "Apple Developer Program enrollment",
+            "Production FastAPI backend URL over HTTPS",
+            "Live release verification for HBB, BRCA1, and TP53",
+            "serious biology/software",
+        ],
+        "business plan",
+    )
+
+
 def verify_app_store_artifacts(texts: dict[str, str], ios_privacy: str) -> None:
     require_all(
         "\n".join(texts.values()),
@@ -240,6 +263,7 @@ def main() -> int:
             "privacy_policy.md": read(PRIVACY_MD),
             "app_store_readiness.md": read(APP_STORE_READINESS),
             "app_store_metadata.md": read(APP_STORE_METADATA),
+            "business_plan.md": read(BUSINESS_PLAN),
             "demo_script.md": read(DEMO_SCRIPT),
             "screenshots.md": read(SCREENSHOTS),
             "review_notes.txt": read(REVIEW_NOTES),
@@ -249,6 +273,7 @@ def main() -> int:
         verify_first_30_seconds(app, example)
         verify_learning_loop(app, ios, ios_api_client)
         verify_trust_and_scope({**docs, "api.py": api})
+        verify_business_plan(docs["business_plan.md"])
         verify_demo_script(docs["demo_script.md"])
         verify_app_store_artifacts(docs, ios_privacy)
         verify_api_contract(api)
