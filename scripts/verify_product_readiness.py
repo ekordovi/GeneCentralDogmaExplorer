@@ -64,6 +64,18 @@ def verify_first_30_seconds(app: str, example: dict) -> None:
         ],
         "Streamlit first-screen loop",
     )
+    require_all(
+        app,
+        [
+            "render_web_trust_strip",
+            "Education only",
+            "Trusted data",
+            "Offline start",
+            "Privacy first",
+            "No accounts, payments, ads, or analytics",
+        ],
+        "Streamlit first-screen trust strip",
+    )
 
 
 def verify_learning_loop(app: str, ios: str, ios_api_client: str) -> None:

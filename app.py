@@ -193,6 +193,31 @@ st.markdown(
         font-weight: 750;
         overflow-wrap: anywhere;
       }
+      .trust-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.6rem;
+        margin: 0.75rem 0 0.95rem;
+      }
+      .trust-item {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 0.7rem 0.75rem;
+        min-width: 0;
+      }
+      .trust-label {
+        color: #3a86ff;
+        font-size: 0.72rem;
+        font-weight: 850;
+        text-transform: uppercase;
+        margin-bottom: 0.25rem;
+      }
+      .trust-copy {
+        color: #374151;
+        font-size: 0.86rem;
+        line-height: 1.35;
+      }
       .web-hero {
         border: 1px solid #d8dee9;
         border-radius: 8px;
@@ -659,6 +684,10 @@ st.markdown(
         }
         .quick-facts {
           grid-template-columns: 1fr 1fr;
+          gap: 0.5rem;
+        }
+        .trust-strip {
+          grid-template-columns: 1fr;
           gap: 0.5rem;
         }
         .web-hero {
@@ -2022,8 +2051,30 @@ def render_guided_start(default_species: str) -> None:
                 show_friendly_error(exc)
 
 
+def render_web_trust_strip() -> None:
+    items = [
+        ("Education only", "Not medical advice, diagnosis, treatment guidance, or clinical variant interpretation."),
+        ("Trusted data", "Live lookup uses the app backend and Ensembl REST gene, transcript, sequence, and protein data."),
+        ("Offline start", "The bundled HBB example works even when live lookup is unavailable."),
+        ("Privacy first", "No accounts, payments, ads, or analytics in version 1."),
+    ]
+    html = ['<div class="trust-strip">']
+    for label, copy in items:
+        html.append(
+            (
+                '<div class="trust-item">'
+                f'<div class="trust-label">{escape_html(label)}</div>'
+                f'<div class="trust-copy">{escape_html(copy)}</div>'
+                "</div>"
+            )
+        )
+    html.append("</div>")
+    st.markdown("".join(html), unsafe_allow_html=True)
+
+
 st.title("Gene Central Dogma Explorer")
 st.caption("Start with a gene, then follow its DNA -> RNA -> protein story in plain English.")
+render_web_trust_strip()
 
 if "dogma_data" not in st.session_state:
     st.session_state["dogma_data"] = load_example()

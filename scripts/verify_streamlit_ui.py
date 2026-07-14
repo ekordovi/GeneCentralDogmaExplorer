@@ -38,6 +38,11 @@ REQUIRED_COPY = (
     "Effect: missense",
     "Effect: nonsense",
     "Effect: frameshift",
+    "Education only",
+    "Trusted data",
+    "Offline start",
+    "Privacy first",
+    "No accounts, payments, ads, or analytics",
 )
 
 
