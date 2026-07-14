@@ -44,6 +44,9 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
   `.github/workflows/api-health.yml`; set `GENE_DOGMA_API_BASE_URL` after the
   backend is deployed so the workflow verifies health, info, example data,
   famous examples, and mutation behavior.
+- Run `python scripts/verify_live_backend.py --base-url https://your-api-host.example`
+  after deployment to prove live HBB, BRCA1, and TP53 lookup, mutation
+  comparison, and friendly failed-lookup behavior before TestFlight.
 
 ## Native App Requirements
 
@@ -81,7 +84,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 - Run `python scripts/verify_ios_config.py` before TestFlight upload.
 - After replacing the Release API URL placeholder, run
   `python scripts/verify_release_ready.py --live-lookup` before TestFlight or
-  App Store upload.
+  App Store upload. That strict gate reuses the live backend verifier.
 
 ## Screenshot Plan
 

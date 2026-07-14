@@ -107,7 +107,12 @@ After deployment, verify the hosted API:
 
 ```bash
 python scripts/verify_v1.py --base-url https://your-api-host.example --live-lookup
+python scripts/verify_live_backend.py --base-url https://your-api-host.example
 ```
+
+`verify_live_backend.py` is the stronger pre-TestFlight smoke test. It checks
+health/info metadata, famous examples, live HBB/BRCA1/TP53 lookup, HBB missense
+versus nonsense mutation comparison, and the friendly failed-lookup message.
 
 Before TestFlight or App Store upload, replace the Release API URL placeholder
 in the Xcode project and run the strict release gate:

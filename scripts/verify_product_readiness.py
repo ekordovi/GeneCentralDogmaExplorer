@@ -20,6 +20,8 @@ APP_STORE_READINESS = ROOT / "docs" / "app_store_readiness.md"
 APP_STORE_METADATA = ROOT / "docs" / "app_store_metadata.md"
 BUSINESS_PLAN = ROOT / "docs" / "business_plan.md"
 DEMO_SCRIPT = ROOT / "docs" / "demo_script.md"
+DEPLOYMENT = ROOT / "docs" / "deployment.md"
+LIVE_BACKEND_CHECK = ROOT / "scripts" / "verify_live_backend.py"
 SCREENSHOTS = ROOT / "app_store" / "screenshots.md"
 REVIEW_NOTES = ROOT / "app_store" / "review_notes.txt"
 PRIVACY_ANSWERS = ROOT / "app_store" / "privacy_answers.md"
@@ -187,6 +189,31 @@ def verify_demo_script(demo_script: str) -> None:
     )
 
 
+def verify_live_backend_check(script: str, deployment: str, app_store_readiness: str) -> None:
+    require_all(
+        script,
+        [
+            "REQUIRED_LIVE_SYMBOLS = (\"HBB\", \"BRCA1\", \"TP53\")",
+            "verify_live_gene_lookup",
+            "verify_mutation_comparison",
+            "verify_friendly_failure",
+            "FRIENDLY_NOT_FOUND",
+            "Production backend URL must use HTTPS",
+        ],
+        "live backend verifier",
+    )
+    require_all(
+        deployment + "\n" + app_store_readiness,
+        [
+            "scripts/verify_live_backend.py",
+            "live HBB, BRCA1, and TP53 lookup",
+            "mutation comparison",
+            "friendly failed-lookup",
+        ],
+        "live backend release docs",
+    )
+
+
 def verify_business_plan(business_plan: str) -> None:
     require_all(
         business_plan,
@@ -267,6 +294,8 @@ def main() -> int:
             "app_store_metadata.md": read(APP_STORE_METADATA),
             "business_plan.md": read(BUSINESS_PLAN),
             "demo_script.md": read(DEMO_SCRIPT),
+            "deployment.md": read(DEPLOYMENT),
+            "verify_live_backend.py": read(LIVE_BACKEND_CHECK),
             "screenshots.md": read(SCREENSHOTS),
             "review_notes.txt": read(REVIEW_NOTES),
             "privacy_answers.md": read(PRIVACY_ANSWERS),
@@ -277,6 +306,11 @@ def main() -> int:
         verify_trust_and_scope({**docs, "api.py": api})
         verify_business_plan(docs["business_plan.md"])
         verify_demo_script(docs["demo_script.md"])
+        verify_live_backend_check(
+            docs["verify_live_backend.py"],
+            docs["deployment.md"],
+            docs["app_store_readiness.md"],
+        )
         verify_app_store_artifacts(docs, ios_privacy)
         verify_api_contract(api)
         print("ok local product readiness")

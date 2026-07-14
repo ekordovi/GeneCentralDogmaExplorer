@@ -17,6 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from verify_ios_config import PBXPROJ, extract_config_value  # noqa: E402
+from verify_live_backend import verify_backend  # noqa: E402
 from verify_v1 import verify_api  # noqa: E402
 
 
@@ -85,10 +86,13 @@ def main() -> int:
                 verify_public_url(label, url)
             print("ok public support and privacy pages")
 
-        verify_api(api_base_url, args.live_lookup)
+        if args.live_lookup:
+            verify_backend(api_base_url, require_live_lookup=True)
+        else:
+            verify_api(api_base_url, live_lookup=False)
         print(f"ok release API checks at {api_base_url}")
         if args.live_lookup:
-            print("ok live release lookup for HBB, BRCA1, and TP53")
+            print("ok live release lookup, mutation comparison, and friendly failure behavior")
     except (AssertionError, KeyError, TimeoutError, ValueError, urllib.error.URLError) as exc:
         print(f"release readiness failed: {exc}", file=sys.stderr)
         return 1
