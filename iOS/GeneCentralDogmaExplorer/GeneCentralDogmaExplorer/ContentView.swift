@@ -559,6 +559,15 @@ struct AboutScreen: View {
                 Section("Privacy") {
                     Text("The app does not use accounts, ads, payments, or analytics in v1. Live lookups send the gene symbol, species, and optional transcript ID to the app backend, which queries Ensembl.")
                 }
+                Section("Version and data source") {
+                    LabeledContent("Version", value: appVersionText())
+                    LabeledContent("Live data", value: "Ensembl REST through app backend")
+                    LabeledContent("Offline demo", value: "Bundled HBB example")
+                }
+                Section("Support") {
+                    Link("Support page", destination: URL(string: "https://ekordovi.github.io/GeneCentralDogmaExplorer/support.html")!)
+                    Link("Privacy policy", destination: URL(string: "https://ekordovi.github.io/GeneCentralDogmaExplorer/privacy.html")!)
+                }
                 Section("App Store category") {
                     LabeledContent("Category", value: "Education")
                     LabeledContent("Bundle ID", value: "com.evankordovi.GeneCentralDogmaExplorer")
@@ -569,6 +578,21 @@ struct AboutScreen: View {
             }
             .navigationTitle("About")
         }
+    }
+}
+
+func appVersionText(bundle: Bundle = .main) -> String {
+    let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+    let build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+    switch (version?.isEmpty == false ? version : nil, build?.isEmpty == false ? build : nil) {
+    case let (version?, build?):
+        return "\(version) (\(build))"
+    case let (version?, nil):
+        return version
+    case let (nil, build?):
+        return build
+    default:
+        return "1.0"
     }
 }
 

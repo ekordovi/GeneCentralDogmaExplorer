@@ -51,6 +51,9 @@ def main() -> int:
     require("Switch to Advanced mode to inspect isoforms" in content, "iOS Beginner mode must hide advanced gene details.")
     require("savedGeneStudyPack(savedGenes:" in content, "iOS saved genes must include a shareable study pack.")
     require("Share Study Pack" in content, "iOS saved genes must expose the study-pack share action.")
+    require("Version and data source" in content, "iOS About must show version and data-source context.")
+    require("https://ekordovi.github.io/GeneCentralDogmaExplorer/support.html" in content, "iOS About must link to public support page.")
+    require("https://ekordovi.github.io/GeneCentralDogmaExplorer/privacy.html" in content, "iOS About must link to public privacy page.")
     require("userDefaults.stringArray(forKey: savedGenesKey)" in api_client, "iOS saved genes must load from local storage.")
     require("userDefaults.set(savedGenes, forKey: savedGenesKey)" in api_client, "iOS saved genes must persist to local storage.")
 

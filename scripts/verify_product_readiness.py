@@ -93,6 +93,9 @@ def verify_learning_loop(app: str, ios: str, ios_api_client: str) -> None:
             "Switch to Advanced mode to inspect isoforms",
             "savedGeneStudyPack(savedGenes:",
             "Share Study Pack",
+            "Version and data source",
+            "Support page",
+            "Privacy policy",
         ],
         "iOS mobile learning loop",
     )
