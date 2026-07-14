@@ -558,6 +558,30 @@ st.markdown(
         font-weight: 850;
         overflow-wrap: anywhere;
       }
+      .location-insight-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin-top: 0.85rem;
+      }
+      .location-insight {
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #f7fafc;
+        padding: 0.7rem;
+        min-width: 0;
+      }
+      .location-insight-label {
+        color: #4b5563;
+        font-size: 0.76rem;
+        margin-bottom: 0.25rem;
+      }
+      .location-insight-value {
+        color: #111827;
+        font-size: 1rem;
+        font-weight: 850;
+        overflow-wrap: anywhere;
+      }
       .chromosome-track {
         position: relative;
         height: 38px;
@@ -588,6 +612,42 @@ st.markdown(
         color: #4b5563;
         font-size: 0.8rem;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .exon-track {
+        position: relative;
+        height: 52px;
+        border: 1px solid #d8dee9;
+        border-radius: 8px;
+        background: #f9fafb;
+        margin: 0.9rem 0 0.55rem;
+        overflow: hidden;
+      }
+      .intron-line {
+        position: absolute;
+        left: 0.8rem;
+        right: 0.8rem;
+        top: 50%;
+        height: 3px;
+        transform: translateY(-50%);
+        background: #cbd5e1;
+      }
+      .exon-block {
+        position: absolute;
+        top: 12px;
+        height: 28px;
+        min-width: 6px;
+        border-radius: 6px;
+        background: linear-gradient(180deg, #3a86ff, #1f9d8a);
+        box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.12);
+      }
+      .exon-legend {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        color: #4b5563;
+        font-size: 0.8rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        overflow-wrap: anywhere;
       }
       .mini-flow {
         display: grid;
@@ -701,6 +761,7 @@ st.markdown(
         .teacher-guide-grid,
         .sequence-strip,
         .sequence-summary-grid,
+        .location-insight-grid,
         .detail-kv-grid,
         .mini-flow,
         .stage-card-grid {
@@ -1029,6 +1090,64 @@ def detail_kv_grid(items: list[tuple[str, str]]) -> str:
     return "".join(html)
 
 
+def location_insight_grid(gene: dict, chrom_length: int | None, start: int, end: int) -> str:
+    gene_span = end - start + 1 if start and end else 0
+    midpoint = (start + end) / 2 if start and end else 0
+    percent = midpoint / chrom_length * 100 if chrom_length and midpoint else 0
+    items = [
+        ("Chromosome", f"chr{chromosome_key(gene) or '?'}"),
+        ("Approx. position", f"{percent:.1f}% across" if percent else "Not available"),
+        ("Gene span", f"{gene_span:,} bp" if gene_span else "Not available"),
+    ]
+    html = ['<div class="location-insight-grid">']
+    for label, value in items:
+        html.append(
+            (
+                '<div class="location-insight">'
+                f'<div class="location-insight-label">{escape_html(label)}</div>'
+                f'<div class="location-insight-value">{escape_html(value)}</div>'
+                "</div>"
+            )
+        )
+    html.append("</div>")
+    return "".join(html)
+
+
+def exon_model_html(exons: list[dict]) -> str:
+    positioned_exons = [
+        (int(exon.get("start") or 0), int(exon.get("end") or 0))
+        for exon in exons
+        if exon.get("start") and exon.get("end")
+    ]
+    positioned_exons = [(start, end) for start, end in positioned_exons if start and end and end >= start]
+    if not positioned_exons:
+        return ""
+
+    model_start = min(start for start, _ in positioned_exons)
+    model_end = max(end for _, end in positioned_exons)
+    model_span = max(1, model_end - model_start + 1)
+    blocks = []
+    for start, end in sorted(positioned_exons):
+        left = max(0.0, min(100.0, (start - model_start) / model_span * 100))
+        width = max(1.2, min(100.0 - left, (end - start + 1) / model_span * 100))
+        blocks.append(f'<span class="exon-block" style="left:{left:.2f}%; width:{width:.2f}%"></span>')
+    return f"""
+      <div class="detail-title">Exon model visual</div>
+      <div class="detail-copy">
+        Blue-green blocks are exons returned for the selected transcript. The line between them represents intronic sequence removed during splicing.
+      </div>
+      <div class="exon-track">
+        <span class="intron-line"></span>
+        {"".join(blocks)}
+      </div>
+      <div class="exon-legend">
+        <span>{model_start:,}</span>
+        <span>{len(positioned_exons):,} exon blocks</span>
+        <span>{model_end:,}</span>
+      </div>
+    """
+
+
 def render_location_detail(gene: dict) -> None:
     chrom = chromosome_key(gene)
     start = int(gene.get("start") or 0)
@@ -1061,7 +1180,9 @@ def render_location_detail(gene: dict) -> None:
             {escape_html(gene.get("display_name", "This gene"))} is located on chromosome {escape_html(chrom or "?")}
             at {escape_html(gene_locus(gene))}. The marker below shows the approximate position across the chromosome.
           </div>
+          <div class="detail-title">Approximate chromosome position</div>
           {track_html}
+          {location_insight_grid(gene, chrom_length, start, end)}
           {detail_kv_grid([
               ("Assembly", str(gene.get("assembly_name") or "NA")),
               ("Start", f"{start:,}" if start else "NA"),
@@ -1162,8 +1283,9 @@ def render_protein_detail(translation: dict, sequences: dict) -> None:
 
 def render_exons_detail(selected: dict) -> None:
     exons = selected.get("Exon") or selected.get("exons") or []
+    exon_visual = exon_model_html(exons)
     st.markdown(
-        """
+        f"""
         <div class="detail-panel">
           <div class="detail-title">Exons and introns</div>
           <div class="detail-copy">
@@ -1176,6 +1298,7 @@ def render_exons_detail(selected: dict) -> None:
             <div class="mini-node">Spliced transcript</div>
             <div class="mini-node">CDS/protein</div>
           </div>
+          {exon_visual}
         </div>
         """,
         unsafe_allow_html=True,

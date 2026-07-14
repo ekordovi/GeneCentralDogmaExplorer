@@ -25,6 +25,7 @@ REQUIRED_COPY = (
     "HBB",
     "Tap a gene card to inspect it",
     "Tap a central dogma step",
+    "Approximate chromosome position",
     "Transcription",
     "Splicing",
     "Codons become amino acids",
@@ -87,6 +88,10 @@ def main() -> int:
         require(
             "Download Study Pack" in app_source and "saved_gene_study_pack.md" in app_source,
             "Streamlit saved genes must have a learner-friendly study-pack export.",
+        )
+        require(
+            "def exon_model_html" in app_source and "Exon model visual" in app_source,
+            "Streamlit tappable gene details must include an exon/intron visual.",
         )
 
         app = AppTest.from_file(str(PROJECT_ROOT / "app.py"))

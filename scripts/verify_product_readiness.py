@@ -61,6 +61,8 @@ def verify_first_30_seconds(app: str, example: dict) -> None:
             "Search any gene",
             "Simulate mutation",
             "Tap a gene card to inspect it",
+            "Approximate chromosome position",
+            "Exon model visual",
             "Tap a central dogma step",
         ],
         "Streamlit first-screen loop",
