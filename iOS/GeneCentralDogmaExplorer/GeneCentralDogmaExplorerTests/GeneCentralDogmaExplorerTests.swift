@@ -80,6 +80,17 @@ final class GeneCentralDogmaExplorerTests: XCTestCase {
         XCTAssertTrue(report.contains("This report is educational and is not medical advice."))
     }
 
+    func testSavedGeneStudyPackIsShareableAndEducational() throws {
+        let studyPack = savedGeneStudyPack(savedGenes: ["HBB", "BRCA1", "TP53"])
+
+        XCTAssertTrue(studyPack.contains("Gene Central Dogma Explorer study pack"))
+        XCTAssertTrue(studyPack.contains("1. HBB"))
+        XCTAssertTrue(studyPack.contains("2. BRCA1"))
+        XCTAssertTrue(studyPack.contains("DNA -> RNA -> protein"))
+        XCTAssertTrue(studyPack.contains("missense and nonsense"))
+        XCTAssertTrue(studyPack.contains("educational only and is not medical advice"))
+    }
+
     func testSequenceDisplaySummariesKeepRawLettersOptIn() throws {
         let summary = sequenceSummaryText("ATGGAGTAA")
         let preview = sequencePreviewText("ATGGAGTAA", limit: 6)

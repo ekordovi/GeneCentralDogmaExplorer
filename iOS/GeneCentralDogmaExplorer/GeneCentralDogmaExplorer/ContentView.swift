@@ -424,6 +424,13 @@ struct SavedGenesScreen: View {
                 if viewModel.savedGenes.isEmpty {
                     ContentUnavailableView("No saved genes", systemImage: "bookmark", description: Text("Save a gene from the Search tab."))
                 } else {
+                    Section("Study pack") {
+                        Text("Share a Markdown review sheet for your saved genes.")
+                            .foregroundStyle(.secondary)
+                        ShareLink(item: savedGeneStudyPack(savedGenes: viewModel.savedGenes)) {
+                            Label("Share Study Pack", systemImage: "square.and.arrow.up")
+                        }
+                    }
                     ForEach(viewModel.savedGenes, id: \.self) { gene in
                         Button {
                             viewModel.loadSavedGene(gene)
@@ -971,4 +978,29 @@ func storyReport(response: GeneDogmaResponse) -> String {
 
     This report is educational and is not medical advice.
     """
+}
+
+func savedGeneStudyPack(savedGenes: [String]) -> String {
+    var lines = [
+        "# Gene Central Dogma Explorer study pack",
+        "",
+        "Use this as a lightweight review sheet for saved genes. It is educational only and is not medical advice.",
+        "",
+        "## Saved genes",
+    ]
+    if savedGenes.isEmpty {
+        lines.append("- No saved genes yet.")
+    } else {
+        for (index, gene) in savedGenes.enumerated() {
+            lines.append("\(index + 1). \(gene)")
+        }
+    }
+    lines.append(contentsOf: [
+        "",
+        "## Review prompts",
+        "- Pick one saved gene and trace DNA -> RNA -> protein in one sentence.",
+        "- Compare a missense and nonsense mutation. What changes at the codon and amino-acid levels?",
+        "- Explain why this app is a teaching tool rather than clinical variant interpretation.",
+    ])
+    return lines.joined(separator: "\n")
 }

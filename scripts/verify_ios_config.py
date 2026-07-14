@@ -49,6 +49,8 @@ def main() -> int:
     require('@AppStorage("gene_explore_learning_mode")' in content, "iOS Explore must persist Beginner/Advanced mode.")
     require('Picker("Learning mode"' in content, "iOS Explore must expose a Beginner/Advanced mode picker.")
     require("Switch to Advanced mode to inspect isoforms" in content, "iOS Beginner mode must hide advanced gene details.")
+    require("savedGeneStudyPack(savedGenes:" in content, "iOS saved genes must include a shareable study pack.")
+    require("Share Study Pack" in content, "iOS saved genes must expose the study-pack share action.")
     require("userDefaults.stringArray(forKey: savedGenesKey)" in api_client, "iOS saved genes must load from local storage.")
     require("userDefaults.set(savedGenes, forKey: savedGenesKey)" in api_client, "iOS saved genes must persist to local storage.")
 

@@ -91,6 +91,8 @@ def verify_learning_loop(app: str, ios: str, ios_api_client: str) -> None:
             "@AppStorage(\"gene_explore_learning_mode\")",
             "Picker(\"Learning mode\"",
             "Switch to Advanced mode to inspect isoforms",
+            "savedGeneStudyPack(savedGenes:",
+            "Share Study Pack",
         ],
         "iOS mobile learning loop",
     )
